@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Loki Clarke's Stocks & Signals</title>
+    <style>
+      :root{
+        --bg:#090909; --card:#0f0f0f; --muted:#9a9a9a; --accent:#00d1ff;
+        --glass: rgba(255,255,255,0.03);
+      }
+      html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial;color:#eee;background:linear-gradient(180deg,var(--bg),#050505);}
+      .wrap{max-width:1100px;margin:36px auto;padding:24px}
+      header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+      h1{font-weight:600;margin:0;font-size:20px}
+      .sub{color:var(--muted);font-size:13px}
+      .controls{display:flex;gap:12px;align-items:center}
+      input[type="search"]{background:var(--card);border:1px solid rgba(255,255,255,0.04);padding:10px 12px;border-radius:10px;color:#fff;width:280px}
+      .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:20px}
+      .card{background:linear-gradient(180deg,var(--card),#0b0b0b);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+      .ticker{font-weight:700;font-size:22px}
+      .name{color:var(--muted);font-size:15px}
+      .meta{display:flex;justify-content:space-between;margin-top:10px;align-items:center}
+      .price{color:var(--accent);font-weight:700}
+      .small{font-size:13px;color:var(--muted)}
+      footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
+      @media (max-width:480px){.wrap{padding:12px}input[type="search"]{width:160px}}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Loki Clarke's Stocks & Signals</h1>
+          <div class="sub">Realtime signals — visually clean, privacy-first</div>
+        </div>
+        <div class="controls">
+          <input id="search" type="search" placeholder="Search ticker or name" />
+          <select id="tagFilter" style="background:var(--card);border:1px solid rgba(255,255,255,0.04);color:#fff;padding:8px;border-radius:8px">
+            <option value="">All tags</option>
+          </select>
+        </div>
+      </header>
+
+      <main>
+        <div id="stocks" class="grid"></div>
+      </main>
+
+      <footer>This page is updated regularly.<br>Disclaimer: This site is for informational purposes only and does not constitute financial or investment advice. Always do your own research before making investment decisions.</footer>
+    </div>
+    <script src="viewer_script.js"></script>
+  </body>
+</html>
