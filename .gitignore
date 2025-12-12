@@ -1,0 +1,11 @@
+.vscode/
+node_modules/
+__pycache__/
+*.pyc
+*.pdb
+*.obj
+*.exe
+build/
+dist/
+.env
+.DS_Store
