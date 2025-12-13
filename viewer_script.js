@@ -206,11 +206,16 @@ function buildOHLCFromCloses(series){
 let __lwChart = null
 let __lwSeries = null
 function renderLightweightChart(containerId, series){
-  if(!window.LightweightCharts) return
   const el = document.getElementById(containerId)
   if(!el) return
+  if(!window.LightweightCharts){
+    // library blocked (Tracking Prevention). show a small notice instead of empty chart
+    el.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">Interactive chart blocked or unavailable in this browser.</div>'
+    return
+  }
   // destroy previous
   if(__lwChart){ try{ __lwChart.remove(); }catch(e){}; __lwChart = null; __lwSeries = null }
+  el.innerHTML = ''
   __lwChart = LightweightCharts.createChart(el, { layout: { background: { color: getComputedStyle(document.documentElement).getPropertyValue('--card') || '#fff' }, textColor: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000' }, grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } }, width: el.clientWidth, height: el.clientHeight })
   __lwSeries = __lwChart.addCandlestickSeries()
   const ohlc = buildOHLCFromCloses(series)
