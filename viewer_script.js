@@ -300,25 +300,19 @@ async function openDetail(stockOrTicker){
   if(!sym) return
   modal.style.display = 'flex'
   document.body.classList.add('modal-open')
-  canvas.width = Math.min(window.innerWidth - 80, 1000)
-  canvas.height = Math.min(window.innerHeight - 160, 420)
-  // try server proxy first (preferred). If it fails, do NOT attempt a client-side Finnhub call
-  // because that requires sending the API key from the browser and triggers CORS/preflight issues.
-  let data = await fetchCandlesProxy(sym, 90, 'D').catch(err=>{ console.warn('Proxy error', err); return null })
-  if(!data){
-    console.warn('Proxy returned no data for', sym, '- falling back to seeded series')
-    const seeded = seriesForTicker(sym, 90)
-    drawDetailChart(canvas, seeded, { title: sym })
-    try{ renderLightweightChart('tvChart', seeded) }catch(e){}
-    return
-  }
-  // draw with fetched data
-  const closes = data.c
-  const timestamps = data.t || null
-  const series = closes.map((v,i)=> ({ t: timestamps ? timestamps[i]*1000 : Date.now() - ((closes.length - i) * 24*60*60*1000), v }))
-  drawDetailChart(canvas, series, { title: sym })
-  // also render an embedded LightweightCharts candlestick view for more detail
-  try{ renderLightweightChart('tvChart', series) }catch(e){ /* ignore if library missing */ }
+  // Render signal details from the stocks array / passed-in symbol
+  const s = stocks.find(x => (x.ticker||'') === sym) || {}
+  const setText = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = (v==null || v==='') ? '-' : String(v) }
+  setText('d_ticker', s.ticker || sym)
+  setText('d_exchange', s.exchange || '')
+  setText('d_name', s.name || '')
+  setText('d_buy_price', typeof s.buy_price === 'number' ? s.buy_price.toFixed(2) : (s.buy_price||'-'))
+  setText('d_buy_amount', s.buy_amount ?? '-')
+  setText('d_expected_profit', s.expected_profit != null ? (typeof s.expected_profit === 'number' ? s.expected_profit + '%' : s.expected_profit) : '-')
+  setText('d_max_risk', s.max_risk != null ? (typeof s.max_risk === 'number' ? s.max_risk + '%' : s.max_risk) : '-')
+  setText('d_target_price', s.target_price != null ? (typeof s.target_price === 'number' ? s.target_price.toFixed(2) : s.target_price) : '-')
+  setText('d_stop_loss', s.stop_loss != null ? (typeof s.stop_loss === 'number' ? s.stop_loss.toFixed(2) : s.stop_loss) : '-')
+  setText('d_notes', s.notes || '')
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{

@@ -129,6 +129,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const m_exchange = document.getElementById('m_exchange')
   const m_name = document.getElementById('m_name')
   const m_buy_price = document.getElementById('m_buy_price')
+  const m_expected_profit = document.getElementById('m_expected_profit')
+  const m_max_risk = document.getElementById('m_max_risk')
+  const m_target_price = document.getElementById('m_target_price')
+  const m_stop_loss = document.getElementById('m_stop_loss')
   const m_buy_amount = document.getElementById('m_buy_amount')
   const m_action = document.getElementById('m_action')
   const m_created_at = document.getElementById('m_created_at')
@@ -190,6 +194,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     m_exchange.value = s.exchange || ''
     m_name.value = s.name || ''
     m_buy_price.value = s.buy_price ?? ''
+    m_expected_profit.value = s.expected_profit ?? ''
+    m_max_risk.value = s.max_risk ?? ''
+    m_target_price.value = s.target_price ?? ''
+    m_stop_loss.value = s.stop_loss ?? ''
     m_buy_amount.value = s.buy_amount ?? ''
     m_action.value = s.action || s.type || s.side || 'buy'
     // convert ISO created_at to datetime-local value
@@ -208,6 +216,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       exchange: m_exchange.value||'',
       name: m_name.value||'',
       buy_price: m_buy_price.value ? Number(m_buy_price.value) : null,
+      expected_profit: m_expected_profit.value ? Number(m_expected_profit.value) : null,
+      max_risk: m_max_risk.value ? Number(m_max_risk.value) : null,
+      target_price: m_target_price.value ? Number(m_target_price.value) : null,
+      stop_loss: m_stop_loss.value ? Number(m_stop_loss.value) : null,
       buy_amount: m_buy_amount.value ? Number(m_buy_amount.value) : null,
       action: m_action ? m_action.value : 'buy',
       notes: m_notes.value||'',

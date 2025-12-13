@@ -100,9 +100,20 @@
       <div style="background:var(--card);padding:18px;border-radius:12px;max-width:640px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
         <button id="detailClose" style="float:right;background:transparent;border:0;color:var(--muted);font-size:18px">✕</button>
           <h3 id="detailTitle" style="margin:0 0 8px 0">Details</h3>
-            <div id="detailContent">
-              <canvas id="detailChart" aria-label="Detail chart"></canvas>
-            </div>
+              <div id="detailContent">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div><strong>Ticker</strong><div id="d_ticker" class="small"></div></div>
+                  <div><strong>Exchange</strong><div id="d_exchange" class="small"></div></div>
+                  <div style="grid-column:1/-1"><strong>Name</strong><div id="d_name" class="small"></div></div>
+                  <div><strong>Buy Price</strong><div id="d_buy_price" class="small"></div></div>
+                  <div><strong>Buy Amount</strong><div id="d_buy_amount" class="small"></div></div>
+                  <div><strong>Expected Profit</strong><div id="d_expected_profit" class="small"></div></div>
+                  <div><strong>Maximum Risk</strong><div id="d_max_risk" class="small"></div></div>
+                  <div><strong>Target Price</strong><div id="d_target_price" class="small"></div></div>
+                  <div><strong>Stop Loss</strong><div id="d_stop_loss" class="small"></div></div>
+                  <div style="grid-column:1/-1"><strong>Notes</strong><div id="d_notes" class="small"></div></div>
+                </div>
+              </div>
               <style>
                 /* make detail chart area more spacious */
                 #detailContent .detail-row{display:flex;gap:12px;align-items:center}
