@@ -252,6 +252,37 @@ function applyFilter(stocks, q, tag){
   return list
 }
 
+// Open detail modal (top-level so other functions can call it)
+async function openDetail(stockOrTicker){
+  const modal = document.getElementById('detailModal')
+  const canvas = document.getElementById('detailChart')
+  if(!modal || !canvas) return
+  // normalize symbol
+  const sym = typeof stockOrTicker === 'string' ? stockOrTicker : (stockOrTicker && stockOrTicker.ticker) ? stockOrTicker.ticker : ''
+  if(!sym) return
+  modal.style.display = 'flex'
+  document.body.classList.add('modal-open')
+  canvas.width = Math.min(window.innerWidth - 80, 1000)
+  canvas.height = Math.min(window.innerHeight - 160, 420)
+  // try server proxy first
+  let data = await fetchCandlesProxy(sym, 90, 'D').catch(()=>null)
+  if(!data){
+    // try direct client fetch if local key is available
+    data = await fetchFinnhubCandles(sym, 90, 'D').catch(()=>null)
+  }
+  if(!data){
+    // fallback: seeded series
+    const seeded = seriesForTicker(sym, 90)
+    drawDetailChart(canvas, seeded, { title: sym })
+    return
+  }
+  // draw with fetched data
+  const closes = data.c
+  const timestamps = data.t || null
+  const series = closes.map((v,i)=> ({ t: timestamps ? timestamps[i]*1000 : Date.now() - ((closes.length - i) * 24*60*60*1000), v }))
+  drawDetailChart(canvas, series, { title: sym })
+}
+
 document.addEventListener('DOMContentLoaded', async ()=>{
   applySavedTheme()
   const container = document.getElementById('stocks')
@@ -280,36 +311,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   populateTagFilterUI(stocks)
   if(search) search.addEventListener('input', redraw)
   if(tagFilter) tagFilter.addEventListener('change', redraw)
-  // wire card click -> detail modal
-  async function openDetail(stockOrTicker){
-    const modal = document.getElementById('detailModal')
-    const canvas = document.getElementById('detailChart')
-    if(!modal || !canvas) return
-    // normalize symbol
-    const sym = typeof stockOrTicker === 'string' ? stockOrTicker : (stockOrTicker && stockOrTicker.ticker) ? stockOrTicker.ticker : ''
-    if(!sym) return
-    modal.style.display = 'flex'
-    document.body.classList.add('modal-open')
-    canvas.width = Math.min(window.innerWidth - 80, 1000)
-    canvas.height = Math.min(window.innerHeight - 160, 420)
-    // try server proxy first
-    let data = await fetchCandlesProxy(sym, 90, 'D').catch(()=>null)
-    if(!data){
-      // try direct client fetch if local key is available
-      data = await fetchFinnhubCandles(sym, 90, 'D').catch(()=>null)
-    }
-    if(!data){
-      // fallback: seeded series
-      const seeded = seriesForTicker(sym, 90)
-      drawDetailChart(canvas, seeded, { title: sym })
-      return
-    }
-    // draw with fetched data
-    const closes = data.c
-    const timestamps = data.t || null
-    const series = closes.map((v,i)=> ({ t: timestamps ? timestamps[i]*1000 : Date.now() - ((closes.length - i) * 24*60*60*1000), v }))
-    drawDetailChart(canvas, series, { title: sym })
-  }
+  // detail modal handled by top-level `openDetail()`
   const closeBtn = document.getElementById('detailClose')
   const modalRoot = document.getElementById('detailModal')
   if(closeBtn) closeBtn.addEventListener('click', ()=>{ if(modalRoot) modalRoot.style.display='none' })
