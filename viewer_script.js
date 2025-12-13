@@ -188,42 +188,7 @@ function drawDetailChart(canvas, data, options={}){
 }
 
 // Build simple OHLC bars from closes for a nice demo in LightweightCharts
-function buildOHLCFromCloses(series){
-  const out = []
-  for(let i=0;i<series.length;i++){
-    const cur = series[i]
-    const close = Number(cur.v)
-    const timeMs = Number(cur.t)
-    const time = Math.floor(timeMs/1000)
-    let open = close
-    if(i>0) open = Number(series[i-1].v)
-    const diff = Math.abs(close - open)
-    const vol = Math.max(0.1, diff * 0.6)
-    const high = Math.max(open, close) + vol
-    const low = Math.min(open, close) - vol
-    out.push({ time, open: open, high: Number(high.toFixed(2)), low: Number(low.toFixed(2)), close: Number(close.toFixed(2)) })
-  }
-  return out
-}
-
-let __lwChart = null
-let __lwSeries = null
-function renderLightweightChart(containerId, series){
-  const el = document.getElementById(containerId)
-  if(!el) return
-  if(!window.LightweightCharts){
-    // library blocked (Tracking Prevention). show a small notice instead of empty chart
-    el.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">Interactive chart blocked or unavailable in this browser.</div>'
-    return
-  }
-  // destroy previous
-  if(__lwChart){ try{ __lwChart.remove(); }catch(e){}; __lwChart = null; __lwSeries = null }
-  el.innerHTML = ''
-  __lwChart = LightweightCharts.createChart(el, { layout: { background: { color: getComputedStyle(document.documentElement).getPropertyValue('--card') || '#fff' }, textColor: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000' }, grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } }, width: el.clientWidth, height: el.clientHeight })
-  __lwSeries = __lwChart.addCandlestickSeries()
-  const ohlc = buildOHLCFromCloses(series)
-  __lwSeries.setData(ohlc)
-}
+// lightweight-charts helpers removed — modal now shows structured signal info only
 
 function renderStockCard(s){
   const el = document.createElement('div'); el.className='card'; el.tabIndex=0; el.role='button'
@@ -296,8 +261,7 @@ function applyFilter(stocks, q, tag){
 // Open detail modal (top-level so other functions can call it)
 async function openDetail(stockOrTicker){
   const modal = document.getElementById('detailModal')
-  const canvas = document.getElementById('detailChart')
-  if(!modal || !canvas) return
+  if(!modal) return
   // normalize symbol
   const sym = typeof stockOrTicker === 'string' ? stockOrTicker : (stockOrTicker && stockOrTicker.ticker) ? stockOrTicker.ticker : ''
   if(!sym) return
