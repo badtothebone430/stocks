@@ -1,5 +1,8 @@
 const STOCKS_URL = './signals.json'
 
+// global stocks array so top-level functions like `openDetail` can access it
+let stocks = []
+
 async function loadStocks(){
   try{
     const res = await fetch(STOCKS_URL,{cache:'no-store'})
@@ -331,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   // skeletons while loading
   container.innerHTML = ''
   for(let i=0;i<6;i++){ const s = document.createElement('div'); s.className='skeleton'; container.appendChild(s) }
-  let stocks = await loadStocks()
+  stocks = await loadStocks()
   function redraw(){
     const q = search ? search.value : ''
     const tag = tagFilter ? tagFilter.value : ''
