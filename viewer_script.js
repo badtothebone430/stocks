@@ -297,16 +297,14 @@ async function openDetail(stockOrTicker){
   document.body.classList.add('modal-open')
   canvas.width = Math.min(window.innerWidth - 80, 1000)
   canvas.height = Math.min(window.innerHeight - 160, 420)
-  // try server proxy first
-  let data = await fetchCandlesProxy(sym, 90, 'D').catch(()=>null)
+  // try server proxy first (preferred). If it fails, do NOT attempt a client-side Finnhub call
+  // because that requires sending the API key from the browser and triggers CORS/preflight issues.
+  let data = await fetchCandlesProxy(sym, 90, 'D').catch(err=>{ console.warn('Proxy error', err); return null })
   if(!data){
-    // try direct client fetch if local key is available
-    data = await fetchFinnhubCandles(sym, 90, 'D').catch(()=>null)
-  }
-  if(!data){
-    // fallback: seeded series
+    console.warn('Proxy returned no data for', sym, '- falling back to seeded series')
     const seeded = seriesForTicker(sym, 90)
     drawDetailChart(canvas, seeded, { title: sym })
+    try{ renderLightweightChart('tvChart', seeded) }catch(e){}
     return
   }
   // draw with fetched data
