@@ -3,6 +3,39 @@ const STOCKS_URL = './signals.json'
 function formatMoney(v){ if(v==null||v==='') return '-'; return typeof v==='number' ? v.toFixed(2) : v }
 function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
 
+// Theme handling
+function applySavedTheme(){
+  const t = localStorage.getItem('theme')
+  if(t === 'light') document.documentElement.classList.add('light')
+  else document.documentElement.classList.remove('light')
+}
+function toggleTheme(){
+  document.documentElement.classList.add('theme-fade')
+  const isLight = document.documentElement.classList.toggle('light')
+  localStorage.setItem('theme', isLight ? 'light' : 'dark')
+  // keep fade class a bit longer than CSS transition
+  setTimeout(()=> document.documentElement.classList.remove('theme-fade'), 620)
+}
+
+// sparkline helpers (same approach as viewer)
+function seededRandom(seed){
+  let h = 2166136261 >>> 0
+  for(let i=0;i<seed.length;i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619) >>> 0
+  return function(){ h += 0x6D2B79F5; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967295 }
+}
+function seriesForTicker(ticker, n=20){ const rng = seededRandom(String(ticker||'').toUpperCase()); const base = 50 + Math.floor(rng()*40); const out=[]; for(let i=0;i<n;i++) out.push(base + (rng()-0.5)*6); return out }
+function drawSparkline(canvas, values, color='#00d1ff'){
+  if(!canvas) return
+  const ctx = canvas.getContext('2d')
+  const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio||1)
+  const h = canvas.height = canvas.clientHeight * (window.devicePixelRatio||1)
+  ctx.clearRect(0,0,w,h)
+  if(!values || values.length===0) return
+  const min = Math.min(...values), max = Math.max(...values)
+  const range = max - min || 1
+  ctx.beginPath(); ctx.lineWidth = 2 * (window.devicePixelRatio||1); ctx.strokeStyle = color; values.forEach((v,i)=>{ const x=(i/(values.length-1))*w; const y = h - ((v-min)/range)*h; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y) }); ctx.stroke()
+}
+
 async function loadStocks(){
   try{
     const res = await fetch(STOCKS_URL,{cache:'no-store'})
@@ -55,15 +88,21 @@ function applyFilter(stocks, q, tag){
 }
 
 function renderStockCard(s, idx, onOpen){
-  const el = document.createElement('div'); el.className='card'
+  const el = document.createElement('div'); el.className='card'; el.tabIndex=0; el.role='button'
   el.innerHTML = `
-    <div class="ticker">${escapeHtml(s.ticker)} <span class="small">${escapeHtml(s.exchange||'')}</span></div>
-    <div class="name">${escapeHtml(s.name||'')}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div>
+        <div class="ticker">${escapeHtml(s.ticker)} <span class="small">${escapeHtml(s.exchange||'')}</span></div>
+        <div class="name">${escapeHtml(s.name||'')}</div>
+      </div>
+      <canvas class="sparkline" aria-hidden="true"></canvas>
+    </div>
     <div class="meta">
       <div class="small">Buy ${s.buy_amount ?? ''} @ <span class="price">${formatMoney(s.buy_price)}</span></div>
       <div class="small">${escapeHtml(s.notes||'')}</div>
     </div>
   `
+  setTimeout(()=>{ const c = el.querySelector('canvas.sparkline'); if(c) drawSparkline(c, seriesForTicker(s.ticker), getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#00d1ff') },0)
   el.addEventListener('click', ()=> onOpen(idx))
   return el
 }
@@ -75,6 +114,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const importBtn = document.getElementById('importBtn')
   const exportBtn = document.getElementById('exportBtn')
   const importFile = document.getElementById('importFile')
+
+  applySavedTheme()
+  const themeToggle = document.getElementById('themeToggle')
+  if(themeToggle){
+    themeToggle.setAttribute('aria-pressed', String(document.documentElement.classList.contains('light')))
+    themeToggle.title = document.documentElement.classList.contains('light') ? 'Switch to dark' : 'Switch to light'
+    themeToggle.addEventListener('click', ()=>{ toggleTheme(); const isLight = document.documentElement.classList.contains('light'); themeToggle.setAttribute('aria-pressed', String(isLight)); themeToggle.title = isLight ? 'Switch to dark' : 'Switch to light' })
+  }
 
   const modal = document.getElementById('modal')
   const modalTitle = document.getElementById('modalTitle')
@@ -128,7 +175,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const list = applyFilter(stocks, q, tag)
     if(list.length===0){ container.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">No signals found</div>'; return }
     list.forEach((s, i)=>{
-      // show the card; i is index in filtered list -> map to original index
       const origIndex = stocks.indexOf(s)
       container.appendChild(renderStockCard(s, origIndex, openEdit))
     })

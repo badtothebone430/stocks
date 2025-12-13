@@ -1,3 +1,5 @@
 add_stock.py
-local_config.js
 index_admin.html
+
+# Ignore any local config files containing API keys or secrets
+local_config.js
