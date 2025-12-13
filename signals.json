@@ -8,15 +8,5 @@
     "action": "buy",
     "notes": "Long-term core",
     "created_at": "2025-12-13T04:11:00.000Z"
-  },
-  {
-    "ticker": "TEST",
-    "exchange": "",
-    "name": "",
-    "buy_price": null,
-    "buy_amount": null,
-    "action": "buy",
-    "notes": "",
-    "created_at": "2025-12-13T04:12:00.000Z"
   }
 ]

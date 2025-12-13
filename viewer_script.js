@@ -204,6 +204,9 @@ function renderStockCard(s){
     const c = el.querySelector('canvas.sparkline')
     if(c) drawSparkline(c, seriesForTicker(s.ticker), getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#00d1ff')
   },0)
+  // open detail on click / enter
+  el.addEventListener('click', ()=> openDetail(s))
+  el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(s) } })
   return el
 }
 
@@ -278,12 +281,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if(search) search.addEventListener('input', redraw)
   if(tagFilter) tagFilter.addEventListener('change', redraw)
   // wire card click -> detail modal
-  function openDetail(s){
+  async function openDetail(stockOrTicker){
     const modal = document.getElementById('detailModal')
     const canvas = document.getElementById('detailChart')
+    if(!modal || !canvas) return
+    // normalize symbol
+    const sym = typeof stockOrTicker === 'string' ? stockOrTicker : (stockOrTicker && stockOrTicker.ticker) ? stockOrTicker.ticker : ''
+    if(!sym) return
     modal.style.display = 'flex'
     document.body.classList.add('modal-open')
-    const ctx = canvas.getContext('2d')
     canvas.width = Math.min(window.innerWidth - 80, 1000)
     canvas.height = Math.min(window.innerHeight - 160, 420)
     // try server proxy first
@@ -303,9 +309,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const timestamps = data.t || null
     const series = closes.map((v,i)=> ({ t: timestamps ? timestamps[i]*1000 : Date.now() - ((closes.length - i) * 24*60*60*1000), v }))
     drawDetailChart(canvas, series, { title: sym })
-    const s = stocks.find(x => (x.ticker||'') === ticker) || {}
-    openDetail(s)
-  })
+  }
   const closeBtn = document.getElementById('detailClose')
   const modalRoot = document.getElementById('detailModal')
   if(closeBtn) closeBtn.addEventListener('click', ()=>{ if(modalRoot) modalRoot.style.display='none' })
