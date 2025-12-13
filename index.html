@@ -99,8 +99,10 @@
     <div id="detailModal" style="display:none;position:fixed;inset:0;backdrop-filter:blur(2px);background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
       <div style="background:var(--card);padding:18px;border-radius:12px;max-width:640px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
         <button id="detailClose" style="float:right;background:transparent;border:0;color:var(--muted);font-size:18px">✕</button>
-        <h3 id="detailTitle" style="margin:0 0 8px 0">Details</h3>
-              <div id="detailContent"></div>
+          <h3 id="detailTitle" style="margin:0 0 8px 0">Details</h3>
+            <div id="detailContent">
+              <canvas id="detailChart" aria-label="Detail chart"></canvas>
+            </div>
               <style>
                 /* make detail chart area more spacious */
                 #detailContent .detail-row{display:flex;gap:12px;align-items:center}
