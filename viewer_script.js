@@ -184,6 +184,39 @@ function drawDetailChart(canvas, data, options={}){
   ctx.restore()
 }
 
+// Build simple OHLC bars from closes for a nice demo in LightweightCharts
+function buildOHLCFromCloses(series){
+  const out = []
+  for(let i=0;i<series.length;i++){
+    const cur = series[i]
+    const close = Number(cur.v)
+    const timeMs = Number(cur.t)
+    const time = Math.floor(timeMs/1000)
+    let open = close
+    if(i>0) open = Number(series[i-1].v)
+    const diff = Math.abs(close - open)
+    const vol = Math.max(0.1, diff * 0.6)
+    const high = Math.max(open, close) + vol
+    const low = Math.min(open, close) - vol
+    out.push({ time, open: open, high: Number(high.toFixed(2)), low: Number(low.toFixed(2)), close: Number(close.toFixed(2)) })
+  }
+  return out
+}
+
+let __lwChart = null
+let __lwSeries = null
+function renderLightweightChart(containerId, series){
+  if(!window.LightweightCharts) return
+  const el = document.getElementById(containerId)
+  if(!el) return
+  // destroy previous
+  if(__lwChart){ try{ __lwChart.remove(); }catch(e){}; __lwChart = null; __lwSeries = null }
+  __lwChart = LightweightCharts.createChart(el, { layout: { background: { color: getComputedStyle(document.documentElement).getPropertyValue('--card') || '#fff' }, textColor: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000' }, grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } }, width: el.clientWidth, height: el.clientHeight })
+  __lwSeries = __lwChart.addCandlestickSeries()
+  const ohlc = buildOHLCFromCloses(series)
+  __lwSeries.setData(ohlc)
+}
+
 function renderStockCard(s){
   const el = document.createElement('div'); el.className='card'; el.tabIndex=0; el.role='button'
   el.innerHTML = `
@@ -281,6 +314,8 @@ async function openDetail(stockOrTicker){
   const timestamps = data.t || null
   const series = closes.map((v,i)=> ({ t: timestamps ? timestamps[i]*1000 : Date.now() - ((closes.length - i) * 24*60*60*1000), v }))
   drawDetailChart(canvas, series, { title: sym })
+  // also render an embedded LightweightCharts candlestick view for more detail
+  try{ renderLightweightChart('tvChart', series) }catch(e){ /* ignore if library missing */ }
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
