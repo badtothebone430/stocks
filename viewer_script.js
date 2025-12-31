@@ -279,6 +279,7 @@ async function openDetail(stockOrTicker){
   setText('d_max_risk', s.max_risk != null ? (typeof s.max_risk === 'number' ? s.max_risk + '%' : s.max_risk) : '-')
   setText('d_target_price', s.target_price != null ? (typeof s.target_price === 'number' ? s.target_price.toFixed(2) : s.target_price) : '-')
   setText('d_stop_loss', s.stop_loss != null ? (typeof s.stop_loss === 'number' ? s.stop_loss.toFixed(2) : s.stop_loss) : '-')
+  setText('d_created_at', s.created_at ? new Date(s.created_at).toLocaleString() : '-')
   setText('d_notes', s.notes || '')
 }
 
