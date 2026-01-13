@@ -91,9 +91,12 @@
         <div id="stocks" class="grid"></div>
       </main>
 
-      <footer>© 2025 Loki Clarke — This page is updated regularly.<br>Disclaimer: This site is for informational purposes only and does not constitute financial or investment advice. Always do your own research before making investment decisions.</footer>
+      <footer id="footer-year">© <span id="current-year"></span> Loki Clarke — This page is updated regularly.<br>Disclaimer: This site is for informational purposes only and does not constitute financial or investment advice. Always do your own research before making investment decisions.</footer>
     </div>
     <script src="local_config.js"></script>
+    <script>
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
     <script src="viewer_script.js"></script>
     <!-- Detail modal for viewer -->
     <div id="detailModal" style="display:none;position:fixed;inset:0;backdrop-filter:blur(2px);background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
