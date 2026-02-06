@@ -1,7 +1,14 @@
 const STOCKS_URL = './signals.json'
+const CLOSED_TRADES_URL = './closed_trades.json'
 
 // global stocks array so top-level functions like `openDetail` can access it
 let stocks = []
+let closedTrades = []
+const ACHIEVEMENTS = [
+  { cycle: 'Cycle 1', total: 83000, profit: 61000 },
+  { cycle: 'Cycle 2', total: 166000, profit: 141000 },
+  { cycle: 'Cycle 4', total: 525000, profit: 500000 }
+]
 
 async function loadStocks(){
   try{
@@ -12,8 +19,18 @@ async function loadStocks(){
   }catch(e){console.error(e);return []}
 }
 
+async function loadClosedTrades(){
+  try{
+    const res = await fetch(CLOSED_TRADES_URL,{cache:'no-store'})
+    if(!res.ok) throw new Error('Failed to load')
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
+  }catch(e){console.error(e);return []}
+}
+
 function formatMoney(v){ if(v==null||v==='') return '-'; return typeof v==='number' ? v.toFixed(2) : v }
 function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+function formatNotesHtml(s){ return escapeHtml(s).replace(/\n/g, '<br>') }
 
 // Theme handling
 function applySavedTheme(){
@@ -202,7 +219,7 @@ function renderStockCard(s){
     </div>
     <div class="meta">
       <div class="small">${escapeHtml(s.action || s.type || '')} ${s.buy_amount ?? ''} @ <span class="price">${formatMoney(s.buy_price)}</span></div>
-      <div class="small">${escapeHtml(s.notes||'')}</div>
+      <div class="small">${formatNotesHtml(s.notes||'')}</div>
     </div>
   `
   // draw sparkline after insertion
@@ -258,18 +275,223 @@ function applyFilter(stocks, q, tag){
   return list
 }
 
+function applySavedNeon(){
+  const n = localStorage.getItem('neon')
+  if(n === 'on') document.documentElement.classList.add('neon')
+  else document.documentElement.classList.remove('neon')
+}
+
+function toggleNeon(){
+  const isNeon = document.documentElement.classList.toggle('neon')
+  localStorage.setItem('neon', isNeon ? 'on' : 'off')
+}
+
+function formatUsd(amount){
+  if(typeof amount !== 'number') return '-'
+  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+}
+
+function formatUsdFixed(amount){
+  if(typeof amount !== 'number') return '-'
+  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+}
+
+function formatSignedUsd(amount){
+  if(typeof amount !== 'number') return '-'
+  const sign = amount < 0 ? '-' : '+'
+  const abs = Math.abs(amount)
+  return sign + abs.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+}
+
+function formatSignedPct(pct){
+  if(typeof pct !== 'number') return '-'
+  const sign = pct < 0 ? '-' : '+'
+  return sign + Math.abs(pct).toFixed(2) + '%'
+}
+
+function getClosedView(){
+  return localStorage.getItem('closed_view') || 'usd'
+}
+
+function setClosedView(view){
+  localStorage.setItem('closed_view', view)
+  const btn = document.getElementById('closedViewToggle')
+  if(btn){
+    btn.setAttribute('aria-pressed', String(view === 'pct'))
+    btn.classList.toggle('is-pct', view === 'pct')
+    btn.classList.toggle('is-usd', view === 'usd')
+  }
+}
+
+function renderAchievements(){
+  const list = document.getElementById('achList')
+  const summary = document.getElementById('achSummary')
+  if(!list || !summary) return
+  list.innerHTML = ''
+  const totalProfit = ACHIEVEMENTS.reduce((sum, a) => sum + (a.profit || 0), 0)
+  const best = ACHIEVEMENTS.slice().sort((a,b)=> (b.total||0) - (a.total||0))[0]
+  summary.innerHTML = `
+    <div>Cycles: <strong>${ACHIEVEMENTS.length}</strong></div>
+    <div>Total Profit: <strong>${formatUsd(totalProfit)}</strong></div>
+    <div>Best Finish: <strong>${best ? best.cycle : '-'}</strong></div>
+  `
+  for(const a of ACHIEVEMENTS){
+    const row = document.createElement('div')
+    row.className = 'ach-item'
+    row.innerHTML = `
+      <div>
+        <div class="label">${escapeHtml(a.cycle)}</div>
+        <div class="ach-profit">Profit: ${formatUsd(a.profit)}</div>
+      </div>
+      <div class="ach-amount">${formatUsd(a.total)}</div>
+    `
+    list.appendChild(row)
+  }
+}
+
+function applyClosedFilter(list, q){
+  if(!q) return list
+  const needle = q.trim().toLowerCase()
+  return list.filter(t => {
+    return (t.ticker||'').toLowerCase().includes(needle) ||
+      (t.name||'').toLowerCase().includes(needle) ||
+      (t.notes||'').toLowerCase().includes(needle)
+  })
+}
+
+function sortClosedTrades(list, key){
+  const out = list.slice()
+  if(key === 'profit_asc') out.sort((a,b)=> (a.profit||0) - (b.profit||0))
+  else if(key === 'profit_desc') out.sort((a,b)=> (b.profit||0) - (a.profit||0))
+  else if(key === 'value_az') out.sort((a,b)=> {
+    const av = (a.name || a.ticker || '').toString()
+    const bv = (b.name || b.ticker || '').toString()
+    return av.localeCompare(bv)
+  })
+  else if(key === 'value_za') out.sort((a,b)=> {
+    const av = (a.name || a.ticker || '').toString()
+    const bv = (b.name || b.ticker || '').toString()
+    return bv.localeCompare(av)
+  })
+  return out
+}
+
+function renderClosedTrades(){
+  const listEl = document.getElementById('closedList')
+  const summaryEl = document.getElementById('closedSummary')
+  if(!listEl) return
+  const q = document.getElementById('closedSearch') ? document.getElementById('closedSearch').value : ''
+  const sortKey = document.getElementById('closedSort') ? document.getElementById('closedSort').value : 'profit_desc'
+  const filtered = applyClosedFilter(closedTrades, q)
+  const sorted = sortClosedTrades(filtered, sortKey)
+  listEl.innerHTML = ''
+  if(summaryEl){
+    const view = getClosedView()
+    const now = new Date()
+    const msDay = 24 * 60 * 60 * 1000
+    const buckets = [
+      { label: '1d', days: 1 },
+      { label: '3d', days: 3 },
+      { label: '7d', days: 7 },
+      { label: '1m', days: 30 },
+      { label: '3m', days: 90 },
+      { label: '1y', days: 365 }
+    ]
+    const parts = buckets.map(b => {
+      const cutoff = new Date(now.getTime() - b.days * msDay)
+      const acc = closedTrades.reduce((out, t) => {
+        if(!t.closed_at) return out
+        const d = new Date(t.closed_at)
+        if(Number.isNaN(d.getTime())) return out
+        if(d >= cutoff){
+          const profit = typeof t.profit === 'number' ? t.profit : ((t.close_price!=null && t.buy_price!=null && t.buy_amount!=null) ? (t.close_price - t.buy_price) * t.buy_amount : 0)
+          const cost = (t.buy_price!=null && t.buy_amount!=null) ? (t.buy_price * t.buy_amount) : 0
+          return { profit: out.profit + (profit || 0), cost: out.cost + (cost || 0) }
+        }
+        return out
+      }, { profit: 0, cost: 0 })
+      const value = (view === 'pct') ? (acc.cost ? (acc.profit / acc.cost) * 100 : null) : acc.profit
+      const text = (view === 'pct') ? formatSignedPct(value) : formatSignedUsd(value)
+      const color = (value != null && value < 0) ? 'var(--profit-neg)' : 'var(--profit-pos)'
+      return `<span>${b.label}: <strong style="color:${color}">${text}</strong></span>`
+    })
+    summaryEl.innerHTML = `Total Profit/Loss from last: ${parts.join(' &nbsp; ')}`
+  }
+  if(sorted.length === 0){
+    listEl.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">No closed trades found</div>'
+    return
+  }
+  for(const t of sorted){
+    const profit = typeof t.profit === 'number' ? t.profit : ((t.close_price!=null && t.buy_price!=null && t.buy_amount!=null) ? (t.close_price - t.buy_price) * t.buy_amount : null)
+    const profitColor = (profit != null && profit < 0) ? 'var(--profit-neg)' : 'var(--profit-pos)'
+    const profitPct = (t.close_price!=null && t.buy_price!=null && t.buy_price !== 0) ? ((t.close_price - t.buy_price) / t.buy_price) * 100 : null
+    const profitPctText = profitPct!=null ? formatSignedPct(profitPct) : ''
+    const view = getClosedView()
+    const profitDisplay = view === 'pct' ? (profitPctText || '-') : (profit!=null ? formatSignedUsd(profit) : '-')
+    const row = document.createElement('div')
+    row.className = 'closed-item'
+    row.tabIndex = 0
+    row.role = 'button'
+    row.innerHTML = `
+      <div>
+        <div class="ticker">${escapeHtml(t.ticker||'')} <span class="small">${escapeHtml(t.exchange||'')}</span></div>
+        <div class="name">${escapeHtml(t.name||'')}</div>
+        <div class="closed-meta small">
+          <div>Opened: ${t.created_at ? new Date(t.created_at).toLocaleDateString() : '-'}</div>
+          <div>Closed: ${t.closed_at ? new Date(t.closed_at).toLocaleDateString() : '-'}</div>
+          <div>Shares: ${t.buy_amount ?? '-'}</div>
+          <div>Open: ${t.buy_price!=null ? formatUsdFixed(t.buy_price) : '-'}</div>
+          <div>Close: ${t.close_price!=null ? formatUsdFixed(t.close_price) : '-'}</div>
+        </div>
+      </div>
+      <div class="closed-profit" style="color:${profitColor}">${profitDisplay}</div>
+    `
+    row.addEventListener('click', ()=> openDetail(t, 'closed'))
+    row.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(t, 'closed') } })
+    listEl.appendChild(row)
+  }
+}
+
+function setActiveTab(tab){
+  const panels = document.querySelectorAll('.tab-panel')
+  const tabs = document.querySelectorAll('.tab')
+  for(const p of panels){
+    const isTarget = p.id === `tab-${tab}`
+    if(isTarget){
+      p.classList.add('show')
+    } else {
+      p.classList.remove('show')
+    }
+  }
+  for(const t of tabs){
+    const isActive = t.dataset.tab === tab
+    t.classList.toggle('active', isActive)
+    t.setAttribute('aria-selected', String(isActive))
+  }
+  const search = document.getElementById('search')
+  const tagFilter = document.getElementById('tagFilter')
+  const closedSearch = document.getElementById('closedSearch')
+  const closedSort = document.getElementById('closedSort')
+  if(search) search.style.display = (tab === 'signals') ? '' : 'none'
+  if(tagFilter) tagFilter.style.display = (tab === 'signals') ? '' : 'none'
+  if(closedSearch) closedSearch.style.display = (tab === 'closed') ? '' : 'none'
+  if(closedSort) closedSort.style.display = (tab === 'closed') ? '' : 'none'
+}
+
 // Open detail modal (top-level so other functions can call it)
-async function openDetail(stockOrTicker){
+async function openDetail(stockOrTicker, source='signals'){
   const modal = document.getElementById('detailModal')
   if(!modal) return
   // normalize symbol
   const sym = typeof stockOrTicker === 'string' ? stockOrTicker : (stockOrTicker && stockOrTicker.ticker) ? stockOrTicker.ticker : ''
   if(!sym) return
   modal.style.display = 'flex'
+  requestAnimationFrame(()=> modal.classList.add('show'))
   document.body.classList.add('modal-open')
   // Render signal details from the stocks array / passed-in symbol
-  const s = stocks.find(x => (x.ticker||'') === sym) || {}
+  const s = (typeof stockOrTicker === 'object' && stockOrTicker) ? stockOrTicker : (source === 'closed' ? (closedTrades.find(x => (x.ticker||'') === sym) || {}) : (stocks.find(x => (x.ticker||'') === sym) || {}))
   const setText = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = (v==null || v==='') ? '-' : String(v) }
+  const setHtml = (id, v) => { const el = document.getElementById(id); if(el) el.innerHTML = (v==null || v==='') ? '-' : formatNotesHtml(v) }
   setText('d_ticker', s.ticker || sym)
   setText('d_exchange', s.exchange || '')
   setText('d_name', s.name || '')
@@ -280,15 +502,27 @@ async function openDetail(stockOrTicker){
   setText('d_target_price', s.target_price != null ? (typeof s.target_price === 'number' ? s.target_price.toFixed(2) : s.target_price) : '-')
   setText('d_stop_loss', s.stop_loss != null ? (typeof s.stop_loss === 'number' ? s.stop_loss.toFixed(2) : s.stop_loss) : '-')
   setText('d_created_at', s.created_at ? new Date(s.created_at).toLocaleString() : '-')
-  setText('d_notes', s.notes || '')
+  setText('d_close_price', s.close_price != null ? (typeof s.close_price === 'number' ? s.close_price.toFixed(2) : s.close_price) : '-')
+  setText('d_closed_at', s.closed_at ? new Date(s.closed_at).toLocaleString() : '-')
+  const view = getClosedView()
+  const pct = (s.close_price!=null && s.buy_price!=null && s.buy_price !== 0) ? ((s.close_price - s.buy_price) / s.buy_price) * 100 : null
+  const profitText = (view === 'pct') ? (pct!=null ? formatSignedPct(pct) : '-') : (s.profit != null ? (typeof s.profit === 'number' ? formatSignedUsd(s.profit) : s.profit) : '-')
+  setText('d_profit', profitText)
+  setHtml('d_notes', s.notes || '')
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
   applySavedTheme()
+  applySavedNeon()
   const container = document.getElementById('stocks')
   const search = document.getElementById('search')
   const tagFilter = document.getElementById('tagFilter')
+  const closedSearch = document.getElementById('closedSearch')
+  const closedSort = document.getElementById('closedSort')
+  const closedViewToggle = document.getElementById('closedViewToggle')
+  const tabs = document.querySelectorAll('.tab')
   const themeToggle = document.getElementById('themeToggle')
+  const neonToggle = document.getElementById('neonToggle')
   if(themeToggle){
     // initialize pressed state and title
     themeToggle.setAttribute('aria-pressed', String(document.documentElement.classList.contains('light')))
@@ -300,6 +534,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   container.innerHTML = ''
   for(let i=0;i<6;i++){ const s = document.createElement('div'); s.className='skeleton'; container.appendChild(s) }
   stocks = await loadStocks()
+  closedTrades = await loadClosedTrades()
   function redraw(){
     const q = search ? search.value : ''
     const tag = tagFilter ? tagFilter.value : ''
@@ -308,14 +543,43 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(list.length===0){ container.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">No signals found</div>'; return }
     for(const s of list){ container.appendChild(renderStockCard(s)) }
   }
+  if(neonToggle){
+    neonToggle.setAttribute('aria-pressed', String(document.documentElement.classList.contains('neon')))
+    neonToggle.title = document.documentElement.classList.contains('neon') ? 'Disable neon' : 'Enable neon'
+    neonToggle.addEventListener('click', ()=>{ toggleNeon(); const isNeon = document.documentElement.classList.contains('neon'); neonToggle.setAttribute('aria-pressed', String(isNeon)); neonToggle.title = isNeon ? 'Disable neon' : 'Enable neon' })
+  }
   populateTagFilterUI(stocks)
   if(search) search.addEventListener('input', redraw)
   if(tagFilter) tagFilter.addEventListener('change', redraw)
+  if(closedSearch) closedSearch.addEventListener('input', renderClosedTrades)
+  if(closedSort) closedSort.addEventListener('change', renderClosedTrades)
+  if(closedViewToggle) closedViewToggle.addEventListener('click', ()=>{
+    const next = getClosedView() === 'usd' ? 'pct' : 'usd'
+    setClosedView(next)
+    renderClosedTrades()
+  })
   // detail modal handled by top-level `openDetail()`
   const closeBtn = document.getElementById('detailClose')
   const modalRoot = document.getElementById('detailModal')
-  if(closeBtn) closeBtn.addEventListener('click', ()=>{ if(modalRoot) modalRoot.style.display='none' })
-  if(modalRoot) modalRoot.addEventListener('click', (e)=>{ if(e.target===modalRoot) modalRoot.style.display='none' })
+  if(closeBtn) closeBtn.addEventListener('click', ()=>{
+    if(modalRoot){
+      modalRoot.classList.remove('show')
+      setTimeout(()=>{ modalRoot.style.display='none' }, 260)
+    }
+  })
+  if(modalRoot) modalRoot.addEventListener('click', (e)=>{
+    if(e.target===modalRoot){
+      modalRoot.classList.remove('show')
+      setTimeout(()=>{ modalRoot.style.display='none' }, 260)
+    }
+  })
 
+  setClosedView(getClosedView())
   redraw()
+  renderAchievements()
+  renderClosedTrades()
+  setActiveTab('signals')
+  for(const t of tabs){
+    t.addEventListener('click', ()=> setActiveTab(t.dataset.tab))
+  }
 })

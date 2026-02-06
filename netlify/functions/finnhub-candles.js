@@ -9,14 +9,16 @@ exports.handler = async function (event) {
     const symbol = params.symbol
     const days = parseInt(params.days || '30', 10)
     const resolution = params.resolution || 'D'
+    const fromParam = params.from ? parseInt(params.from, 10) : null
+    const toParam = params.to ? parseInt(params.to, 10) : null
     if (!symbol) return { statusCode: 400, body: 'Missing symbol' }
 
     // Accept either API_KEY or FINNHUB_API_KEY for flexibility
     const key = process.env.API_KEY || process.env.FINNHUB_API_KEY
     if (!key) return { statusCode: 500, body: 'Missing API key environment variable (set API_KEY or FINNHUB_API_KEY)' }
 
-    const to = Math.floor(Date.now() / 1000)
-    const from = to - (days * 24 * 60 * 60)
+    const to = (Number.isFinite(toParam) && toParam) ? toParam : Math.floor(Date.now() / 1000)
+    const from = (Number.isFinite(fromParam) && fromParam) ? fromParam : (to - (days * 24 * 60 * 60))
 
     const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=${encodeURIComponent(resolution)}&from=${from}&to=${to}`
 

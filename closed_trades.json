@@ -1,0 +1,19 @@
+[
+  {
+    "ticker": "SEB",
+    "exchange": "NYSE",
+    "name": "Seaboard Corporation",
+    "buy_price": 4278.16,
+    "expected_profit": 1.7,
+    "max_risk": 3,
+    "target_price": 4388,
+    "stop_loss": 4150,
+    "buy_amount": 20,
+    "action": "buy",
+    "notes": "Entering strong supply zone",
+    "created_at": "2025-12-24T02:50:00.000Z",
+    "close_price": 5453,
+    "closed_at": "2026-02-06T18:47:00.000Z",
+    "profit": 23496.800000000003
+  }
+]
