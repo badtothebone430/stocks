@@ -85,22 +85,26 @@
       .neon .card:hover,
       .neon .closed-item:hover,
       .neon .tab:hover,
+      .neon .ach-item:hover,
       .neon .theme-toggle:hover,
       .neon .view-toggle:hover,
       .neon button:hover,
       .neon input:hover,
-      .neon select:hover{
+      .neon select:hover,
+      .neon .ach-bio:hover{
         box-shadow:0 0 0 1px rgba(0,209,255,0.9), 0 0 16px rgba(64,156,255,0.65), 0 0 30px rgba(0,209,255,0.45);
         border-color:rgba(0,209,255,0.9);
       }
       .neon .card:hover,
       .neon .closed-item:hover,
       .neon .tab:hover,
+      .neon .ach-item:hover,
       .neon .theme-toggle:hover,
       .neon .view-toggle:hover,
       .neon button:hover,
       .neon input:hover,
-      .neon select:hover{
+      .neon select:hover,
+      .neon .ach-bio:hover{
         animation: neonGlow 2.4s ease-in-out infinite;
       }
       @keyframes neonGlow{
@@ -111,15 +115,24 @@
       .closed-controls input[type="search"]{width:240px}
       .closed-list{display:grid;gap:12px;margin-top:14px}
       .closed-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-radius:12px;background:linear-gradient(180deg,var(--card),var(--card-end));border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.06);transition:transform .12s,box-shadow .12s}
+      .closed-item{cursor:pointer}
       .closed-item:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.12)}
       .closed-meta{display:flex;gap:14px;flex-wrap:wrap}
       .closed-profit{font-weight:700}
       .achievements{margin-top:12px;display:grid;gap:14px}
       .achievement-header{display:flex;align-items:center;gap:12px}
-      .ach-logo{width:140px;height:auto;object-fit:contain}
+      .ach-logo{width:170px;height:auto;object-fit:contain}
       .ach-summary{display:flex;flex-wrap:wrap;gap:12px;color:var(--muted);font-size:13px}
+      .ach-bio{border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;background:linear-gradient(180deg,var(--card),var(--card-end))}
+      .ach-bio summary{cursor:pointer;font-weight:600}
+      .ach-bio .bio-text{color:var(--muted);font-size:13px;line-height:1.5;max-width:820px;margin-top:8px}
+      .ach-bio .bio-text{overflow:hidden;max-height:0;opacity:0;transition:max-height 280ms ease, opacity 220ms ease}
+      .ach-bio[open] .bio-text{max-height:800px;opacity:1}
+      .bio-dots{display:none;font-size:13px;color:var(--muted)}
+      .bio-dots.show{display:inline-block}
       .ach-list{display:grid;gap:12px}
-      .ach-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-radius:12px;background:linear-gradient(180deg,var(--card),var(--card-end));border:1px solid rgba(255,255,255,0.03)}
+      .ach-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-radius:12px;background:linear-gradient(180deg,var(--card),var(--card-end));border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.06);transition:transform .12s,box-shadow .12s;cursor:pointer}
+      .ach-item:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.12)}
       .ach-item .label{font-weight:600}
       .ach-amount{font-weight:700;color:var(--accent)}
       .ach-profit{font-size:13px;color:var(--muted)}
@@ -166,6 +179,7 @@
       .light body::after{ opacity:1 }
       .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:20px}
       .card{background:linear-gradient(180deg,var(--card),var(--card-end));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.06);transition:transform .12s,box-shadow .12s}
+      .card{cursor:pointer}
       .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.12)}
       .ticker{font-weight:700;font-size:20px}
       .name{color:var(--muted);font-size:14px;margin-top:6px}
@@ -178,7 +192,37 @@
       canvas.sparkline{display:block;margin-left:auto;width:80px;height:28px}
       .skeleton{background:linear-gradient(90deg,var(--skeleton-start),var(--skeleton-mid),var(--skeleton-start));height:88px;border-radius:12px}
       footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
-      @media (max-width:480px){.wrap{padding:12px}input[type="search"]{width:160px}.grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
+      button, .tab, .theme-toggle, .view-toggle, .promo-close, .price-marker, .card, .closed-item { cursor:pointer }
+      @media (max-width:820px){
+        header{gap:12px}
+        .controls{flex-wrap:wrap}
+        .controls input[type="search"], .controls select, .controls .theme-toggle{width:100%}
+        .controls .theme-toggle{justify-content:center}
+        .tabs{flex-wrap:wrap}
+        .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+        .closed-item{flex-direction:column;align-items:flex-start}
+      }
+      @media (max-width:520px){
+        .wrap{padding:12px}
+        .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        #search,#tagFilter,#sortSignals{grid-column:1/-1}
+        .controls input[type="search"], .controls select{width:100%}
+        .controls .theme-toggle{width:100%}
+        .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+        .modal-card{width:95%}
+        #detailContent > div{grid-template-columns:1fr}
+        .gauge{flex-direction:column;align-items:flex-start}
+        .price-info{font-size:11px}
+      }
+      @media (min-width:821px){
+        #neonToggle, #themeToggle{
+          position:fixed;
+          top:18px;
+          z-index:50;
+        }
+        #themeToggle{right:18px}
+        #neonToggle{right:70px}
+      }
     </style>
   </head>
   <body>
@@ -238,13 +282,20 @@
               </div>
             </div>
             <div class="ach-summary" id="achSummary"></div>
+            <details class="ach-bio" open>
+              <summary>About Loki Clarke</summary>
+              <div class="bio-text" id="achBioText" data-full-text="AI Overview: About Loki Clarke||His approach blends fundamentals, technicals, and news context to identify high‑probability swing setups and time entries.||Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has won the past five consecutive times, racking in a total profit of over $700,000 USD. While he keeps his exact strategy private, he has shared that his decisions are guided by fundamentals and technicals.">
+                <div class="bio-dots" id="achBioDots">Thinking...</div>
+                <div id="achBioType"></div>
+              </div>
+            </details>
             <div class="ach-list" id="achList"></div>
             <div class="proof">
               <div class="small">Proof articles & posts</div>
               <ul class="proof-list">
-                <li><a href="https://www.facebook.com/ansamcalbarbados/posts/-future-investors-in-the-makingin-may-the-ministry-of-education-barbados-stock-e/1413615096391648/#:~:text=Big%20congratulations%20to%20our%20top,Jun%2018%2C%202025%F3%B0%9E%8B%F3%B1%9F%A0">Facebook: "Big congratulations to our top..." (Jun 18, 2025)</a></li>
-                <li><a href="https://www.facebook.com/ansamcalbarbados/?locale=sr_RS#:~:text=Triple%20Champion%20Loki%20Clarke%20Dominates,FutureLeaders%20%23FinancialLiteracy%20%23InvestSmart%20%23YouthEmpowerment">Facebook: "Triple Champion Loki Clarke Dominates..."</a></li>
-                <li><a href="https://barbadostoday.bb/2025/03/21/students-honoured-at-inaugural-wizdomcrm-sustainable-stock-exchange-market-game-awards-ceremony/">Barbados Today: Students honoured at inaugural WizdomCRM sustainable stock exchange market game awards ceremony (Mar 21, 2025)</a></li>
+                <li><a href="https://barbadostoday.bb/2026/02/05/bajan-students-end-trinis-four-year-reign-in-cross-border-ai-stock-market-game/">Barbados Today: "Loki Clarke smashes records to defeat Trinidad in virtual stock market game"</a></li>
+                <li><a href="https://www.facebook.com/MEDTBarbados/posts/metnews-qc-tops-wizdomcrm-virtual-stock-marketloki-clarke-of-queens-college-is-t/1162806882302024/">Facebook: "Loki Clarke wins first virtual stock market game in Barbados"</a></li>
+                <li><a href="https://www.facebook.com/ansamcalbarbados/videos/triple-champion-loki-clarke-dominates-the-wizdomcrm-sustainable-stock-market-gam/24562512726708575/">Facebook: "Three time chamion Loki Clarke DOMINATES virtual stock market game again"</a></li>
               </ul>
             </div>
           </div>

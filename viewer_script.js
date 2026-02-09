@@ -6,8 +6,8 @@ let stocks = []
 let closedTrades = []
 const ACHIEVEMENTS = [
   { cycle: 'Cycle 1', total: 83000, profit: 61000 },
-  { cycle: 'Cycle 2', total: 166000, profit: 141000 },
-  { cycle: 'Cycle 4', total: 525000, profit: 500000 }
+  { cycle: 'Cycle 2', total: 166600, profit: 141600 },
+  { cycle: 'Cycle 4', total: 532833, profit: 507833 }
 ]
 
 async function loadStocks(){
@@ -830,5 +830,78 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   setActiveTab('signals')
   for(const t of tabs){
     t.addEventListener('click', ()=> setActiveTab(t.dataset.tab))
+  }
+
+  // AI overview bio: thinking dots then typewriter
+  const bioDetails = document.querySelector('.ach-bio')
+  const bioTextEl = document.getElementById('achBioText')
+  const bioDots = document.getElementById('achBioDots')
+  const bioType = document.getElementById('achBioType')
+  let bioTimer = null
+  let bioTyping = null
+  function clearBioTimers(){
+    if(bioTimer){ clearTimeout(bioTimer); bioTimer = null }
+    if(bioTyping){ clearTimeout(bioTyping); bioTyping = null }
+  }
+  function runTypewriter(text){
+    if(!bioType) return
+    bioType.innerHTML = ''
+    let i = 0
+    const tick = ()=>{
+      bioType.innerHTML = text.slice(0, i)
+      i += 1
+      if(i <= text.length){
+        bioTyping = setTimeout(tick, 8)
+      }
+    }
+    tick()
+  }
+  if(bioDetails && bioTextEl && bioDots && bioType){
+    const variants = [
+      [
+        'AI Overview: About Loki Clarke',
+        'He blends fundamentals, technicals, and news context to identify high‑probability swing setups and time entries.',
+        "Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has won the past five consecutive times, racking in a total profit of over $700,000 USD. While he keeps his exact strategy private, he has shared that his decisions are guided by fundamentals and technicals."
+      ],
+      [
+        'AI Overview: About Loki Clarke',
+        'His process combines fundamental strength, technical structure, and news catalysts to time swing trades.',
+        "Loki Clarke is a Queen's College Barbados student and the sole winner of the virtual stock market game. He has taken the past five straight titles, building over $700,000 USD in total profit. He keeps the exact playbook private, but says fundamentals and technicals guide every trade."
+      ],
+      [
+        'AI Overview: About Loki Clarke',
+        'He weighs fundamentals, technicals, and news momentum to rank setups and pick entries.',
+        "Loki Clarke, a student at Queen's College Barbados, is the sole winner of the virtual stock market game. He has won five consecutive times, racking in over $700,000 USD in total profit. His exact strategy stays private, though he notes that fundamentals and technicals steer his decisions."
+      ],
+      [
+        'AI Overview: About Loki Clarke',
+        'The method merges fundamentals, technical patterns, and news flow to spot high‑probability swings.',
+        "Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has captured five straight wins, totaling over $700,000 USD in profit. He keeps the details quiet but says fundamentals and technicals are his compass."
+      ],
+      [
+        'AI Overview: About Loki Clarke',
+        'He focuses on fundamentals and technicals, with news context as a timing filter for swing trades.',
+        "Loki Clarke is a Queen's College Barbados student and the sole winner of the virtual stock market game. He has won the past five in a row, racking in over $700,000 USD total profit. While his precise strategy is private, he cites fundamentals and technicals as the guide."
+      ]
+    ]
+    bioDetails.addEventListener('toggle', ()=>{
+      clearBioTimers()
+      if(!bioDetails.open){
+        bioDots.classList.remove('show')
+        bioType.innerHTML = ''
+        return
+      }
+      const pick = variants[Math.floor(Math.random() * variants.length)]
+      const textHtml = pick.map((p, idx)=>{
+        if(idx === 0) return `<div style="font-weight:600">${p}</div>`
+        return `<div style="margin-top:${idx===1 ? 6 : 8}px">${p}</div>`
+      }).join('')
+      bioDots.classList.add('show')
+      bioType.innerHTML = ''
+      bioTimer = setTimeout(()=>{
+        bioDots.classList.remove('show')
+        runTypewriter(textHtml)
+      }, 2000)
+    })
   }
 })
