@@ -11,10 +11,11 @@
     "buy_amount": 20,
     "action": "buy",
     "notes": "Entering strong supply zone",
-    "created_at": "2025-12-24T02:50:00.000Z",
+    "created_at": "2025-12-24T06:50:00.000Z",
     "close_price": 5453,
-    "closed_at": "2026-02-06T18:47:00.000Z",
-    "profit": 23496.800000000003
+    "closed_at": "2026-02-06T22:47:00.000Z",
+    "profit": 23496.800000000003,
+    "confidence_score": 95
   },
   {
     "ticker": "IESC",
@@ -28,9 +29,10 @@
     "buy_amount": 150,
     "action": "buy",
     "notes": "Entering support zone\nRSI: Oversold\nReversal setup",
-    "created_at": "2026-01-30T17:50:00.000Z",
+    "created_at": "2026-01-30T21:50:00.000Z",
     "close_price": 455.88,
-    "closed_at": "2026-02-06T00:00:00.000Z",
-    "profit": 11944.5
+    "closed_at": "2026-02-06T04:00:00.000Z",
+    "profit": 11944.5,
+    "confidence_score": 89
   }
 ]
