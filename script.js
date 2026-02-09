@@ -4,6 +4,10 @@ const CLOSED_TRADES_URL = './closed_trades.json'
 function formatMoney(v){ if(v==null||v==='') return '-'; return typeof v==='number' ? v.toFixed(2) : v }
 function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
 function formatNotesHtml(s){ return escapeHtml(s).replace(/\n/g, '<br>') }
+function formatConfidence(v){
+  if(typeof v !== 'number' || !Number.isFinite(v)) return '0'
+  return Number.isInteger(v) ? String(v) : v.toFixed(1)
+}
 
 // Theme handling
 function applySavedTheme(){
@@ -97,14 +101,16 @@ function renderStockCard(s, idx, onOpen){
         <div class="ticker">${escapeHtml(s.ticker)} <span class="small">${escapeHtml(s.exchange||'')}</span></div>
         <div class="name">${escapeHtml(s.name||'')}</div>
       </div>
-      <canvas class="sparkline" aria-hidden="true"></canvas>
+      <div class="confidence" aria-label="Confidence score">
+        <div class="confidence-label">Confidence</div>
+        <div class="confidence-value">${formatConfidence(s.confidence_score)}/100</div>
+      </div>
     </div>
     <div class="meta">
       <div class="small">Buy ${s.buy_amount ?? ''} @ <span class="price">${formatMoney(s.buy_price)}</span></div>
       <div class="small">${formatNotesHtml(s.notes||'')}</div>
     </div>
   `
-  setTimeout(()=>{ const c = el.querySelector('canvas.sparkline'); if(c) drawSparkline(c, seriesForTicker(s.ticker), getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#00d1ff') },0)
   el.addEventListener('click', ()=> onOpen(idx))
   return el
 }
@@ -168,6 +174,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const m_max_risk = document.getElementById('m_max_risk')
   const m_target_price = document.getElementById('m_target_price')
   const m_stop_loss = document.getElementById('m_stop_loss')
+  const m_confidence_score = document.getElementById('m_confidence_score')
   const m_buy_amount = document.getElementById('m_buy_amount')
   const m_action = document.getElementById('m_action')
   const m_created_at = document.getElementById('m_created_at')
@@ -282,6 +289,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     m_max_risk.value = s.max_risk ?? ''
     m_target_price.value = s.target_price ?? ''
     m_stop_loss.value = s.stop_loss ?? ''
+    if(m_confidence_score) m_confidence_score.value = s.confidence_score ?? ''
     m_buy_amount.value = s.buy_amount ?? ''
     m_action.value = s.action || s.type || s.side || 'buy'
     // convert ISO created_at to datetime-local value
@@ -310,6 +318,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     m_max_risk.value = s.max_risk ?? ''
     m_target_price.value = s.target_price ?? ''
     m_stop_loss.value = s.stop_loss ?? ''
+    if(m_confidence_score) m_confidence_score.value = s.confidence_score ?? ''
     m_buy_amount.value = s.buy_amount ?? ''
     m_action.value = s.action || s.type || s.side || 'buy'
     m_created_at.value = s.created_at ? new Date(s.created_at).toISOString().slice(0,16) : ''
@@ -337,6 +346,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       max_risk: m_max_risk.value ? Number(m_max_risk.value) : null,
       target_price: m_target_price.value ? Number(m_target_price.value) : null,
       stop_loss: m_stop_loss.value ? Number(m_stop_loss.value) : null,
+      confidence_score: m_confidence_score && m_confidence_score.value !== '' ? Number(m_confidence_score.value) : 0,
       buy_amount: m_buy_amount.value ? Number(m_buy_amount.value) : null,
       action: m_action ? m_action.value : 'buy',
       notes: m_notes.value||'',
@@ -546,6 +556,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     editingIndex = null
     editingList = 'signals'
     m_ticker.value=''; m_exchange.value=''; m_name.value=''; m_buy_price.value=''; m_buy_amount.value='';
+    if(m_confidence_score) m_confidence_score.value='0'
     if(m_action) m_action.value = 'buy'
     if(m_created_at) m_created_at.value = new Date().toISOString().slice(0,16)
     m_notes.value=''; if(m_close_price) m_close_price.value=''; if(m_closed_at) m_closed_at.value=''; if(m_profit) m_profit.value='';

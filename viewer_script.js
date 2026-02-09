@@ -31,6 +31,10 @@ async function loadClosedTrades(){
 function formatMoney(v){ if(v==null||v==='') return '-'; return typeof v==='number' ? v.toFixed(2) : v }
 function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
 function formatNotesHtml(s){ return escapeHtml(s).replace(/\n/g, '<br>') }
+function formatConfidence(v){
+  if(typeof v !== 'number' || !Number.isFinite(v)) return '0'
+  return Number.isInteger(v) ? String(v) : v.toFixed(1)
+}
 
 // Theme handling
 function applySavedTheme(){
@@ -215,18 +219,16 @@ function renderStockCard(s){
         <div class="ticker">${escapeHtml(s.ticker)} <span class="small">${escapeHtml(s.exchange||'')}</span></div>
         <div class="name">${escapeHtml(s.name||'')}</div>
       </div>
-      <canvas class="sparkline" aria-hidden="true"></canvas>
+      <div class="confidence" aria-label="Confidence score">
+        <div class="confidence-label">Confidence</div>
+        <div class="confidence-value">${formatConfidence(s.confidence_score)}/100</div>
+      </div>
     </div>
     <div class="meta">
       <div class="small">${escapeHtml(s.action || s.type || '')} ${s.buy_amount ?? ''} @ <span class="price">${formatMoney(s.buy_price)}</span></div>
       <div class="small">${formatNotesHtml(s.notes||'')}</div>
     </div>
   `
-  // draw sparkline after insertion
-  setTimeout(()=>{
-    const c = el.querySelector('canvas.sparkline')
-    if(c) drawSparkline(c, seriesForTicker(s.ticker), getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#00d1ff')
-  },0)
   // open detail on click / enter
   el.addEventListener('click', ()=> openDetail(s))
   el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(s) } })
@@ -284,6 +286,24 @@ function sortSignalsByRecent(list){
     if(Number.isNaN(bd)) return -1
     return bd - ad
   })
+}
+
+function sortSignals(list, key){
+  const out = list.slice()
+  if(key === 'oldest') return sortSignalsByRecent(out).reverse()
+  if(key === 'name_az'){
+    return out.sort((a,b)=> String(a.name || a.ticker || '').localeCompare(String(b.name || b.ticker || '')))
+  }
+  if(key === 'price_desc'){
+    return out.sort((a,b)=> (Number(b.buy_price)||0) - (Number(a.buy_price)||0))
+  }
+  if(key === 'price_asc'){
+    return out.sort((a,b)=> (Number(a.buy_price)||0) - (Number(b.buy_price)||0))
+  }
+  if(key === 'confidence_desc'){
+    return out.sort((a,b)=> (Number(b.confidence_score)||0) - (Number(a.confidence_score)||0))
+  }
+  return sortSignalsByRecent(out)
 }
 
 function applySavedNeon(){
@@ -512,6 +532,7 @@ async function openDetail(stockOrTicker, source='signals'){
   setText('d_max_risk', s.max_risk != null ? (typeof s.max_risk === 'number' ? s.max_risk + '%' : s.max_risk) : '-')
   setText('d_target_price', s.target_price != null ? (typeof s.target_price === 'number' ? s.target_price.toFixed(2) : s.target_price) : '-')
   setText('d_stop_loss', s.stop_loss != null ? (typeof s.stop_loss === 'number' ? s.stop_loss.toFixed(2) : s.stop_loss) : '-')
+  setText('d_confidence', s.confidence_score != null ? (formatConfidence(Number(s.confidence_score)) + '/100') : '0/100')
   setText('d_created_at', s.created_at ? new Date(s.created_at).toLocaleString() : '-')
   setText('d_close_price', s.close_price != null ? (typeof s.close_price === 'number' ? s.close_price.toFixed(2) : s.close_price) : '-')
   setText('d_closed_at', s.closed_at ? new Date(s.closed_at).toLocaleString() : '-')
@@ -531,6 +552,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const closedSearch = document.getElementById('closedSearch')
   const closedSort = document.getElementById('closedSort')
   const closedViewToggle = document.getElementById('closedViewToggle')
+  const sortSignalsSelect = document.getElementById('sortSignals')
   const tabs = document.querySelectorAll('.tab')
   const themeToggle = document.getElementById('themeToggle')
   const neonToggle = document.getElementById('neonToggle')
@@ -549,8 +571,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   function redraw(){
     const q = search ? search.value : ''
     const tag = tagFilter ? tagFilter.value : ''
+    const sortKey = sortSignalsSelect ? sortSignalsSelect.value : 'newest'
     container.innerHTML = ''
-    const list = sortSignalsByRecent(applyFilter(stocks, q, tag))
+    const list = sortSignals(applyFilter(stocks, q, tag), sortKey)
     if(list.length===0){ container.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">No signals found</div>'; return }
     for(const s of list){ container.appendChild(renderStockCard(s)) }
   }
@@ -562,6 +585,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   populateTagFilterUI(stocks)
   if(search) search.addEventListener('input', redraw)
   if(tagFilter) tagFilter.addEventListener('change', redraw)
+  if(sortSignalsSelect) sortSignalsSelect.addEventListener('change', redraw)
   if(closedSearch) closedSearch.addEventListener('input', renderClosedTrades)
   if(closedSort) closedSort.addEventListener('change', renderClosedTrades)
   if(closedViewToggle) closedViewToggle.addEventListener('click', ()=>{
