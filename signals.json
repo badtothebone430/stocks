@@ -37,7 +37,7 @@
     "ticker": "MEDP",
     "exchange": "NASDAQ",
     "name": "Medpace Holdings Inc",
-    "buy_price": 530.88,
+    "buy_price": 538.74,
     "expected_profit": 11,
     "max_risk": 12,
     "target_price": 480,
@@ -45,7 +45,7 @@
     "buy_amount": 54,
     "action": "sell",
     "notes": "Earnings reaction",
-    "created_at": "2026-02-09T23:17:00.000Z",
+    "created_at": "2026-02-10T03:17:00.000Z",
     "close_price": null,
     "closed_at": null,
     "profit": null

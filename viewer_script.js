@@ -275,6 +275,17 @@ function applyFilter(stocks, q, tag){
   return list
 }
 
+function sortSignalsByRecent(list){
+  return list.slice().sort((a,b)=>{
+    const ad = a && a.created_at ? new Date(a.created_at).getTime() : 0
+    const bd = b && b.created_at ? new Date(b.created_at).getTime() : 0
+    if(Number.isNaN(ad) && Number.isNaN(bd)) return 0
+    if(Number.isNaN(ad)) return 1
+    if(Number.isNaN(bd)) return -1
+    return bd - ad
+  })
+}
+
 function applySavedNeon(){
   const n = localStorage.getItem('neon')
   if(n === 'on') document.documentElement.classList.add('neon')
@@ -539,7 +550,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const q = search ? search.value : ''
     const tag = tagFilter ? tagFilter.value : ''
     container.innerHTML = ''
-    const list = applyFilter(stocks, q, tag)
+    const list = sortSignalsByRecent(applyFilter(stocks, q, tag))
     if(list.length===0){ container.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">No signals found</div>'; return }
     for(const s of list){ container.appendChild(renderStockCard(s)) }
   }
