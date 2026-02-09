@@ -102,7 +102,7 @@ function renderStockCard(s, idx, onOpen){
         <div class="name">${escapeHtml(s.name||'')}</div>
       </div>
       <div class="confidence" aria-label="Confidence score">
-        <div class="confidence-label">Confidence</div>
+        <div class="confidence-label">Confidence™</div>
         <div class="confidence-value">${formatConfidence(s.confidence_score)}/100</div>
       </div>
     </div>

@@ -220,7 +220,7 @@ function renderStockCard(s){
         <div class="name">${escapeHtml(s.name||'')}</div>
       </div>
       <div class="confidence" aria-label="Confidence score">
-        <div class="confidence-label">Confidence</div>
+        <div class="confidence-label">Confidence™</div>
         <div class="confidence-value">${formatConfidence(s.confidence_score)}/100</div>
       </div>
     </div>
@@ -347,10 +347,16 @@ function getClosedView(){
 function setClosedView(view){
   localStorage.setItem('closed_view', view)
   const btn = document.getElementById('closedViewToggle')
+  const modelBtn = document.getElementById('confidenceViewToggle')
   if(btn){
     btn.setAttribute('aria-pressed', String(view === 'pct'))
     btn.classList.toggle('is-pct', view === 'pct')
     btn.classList.toggle('is-usd', view === 'usd')
+  }
+  if(modelBtn){
+    modelBtn.setAttribute('aria-pressed', String(view === 'pct'))
+    modelBtn.classList.toggle('is-pct', view === 'pct')
+    modelBtn.classList.toggle('is-usd', view === 'usd')
   }
 }
 
@@ -483,6 +489,48 @@ function renderClosedTrades(){
   }
 }
 
+function renderConfidenceModel(){
+  const listEl = document.getElementById('confidenceModelList')
+  const summaryEl = document.getElementById('confidenceSummary')
+  if(!listEl) return
+  const view = getClosedView()
+  const ranges = [
+    { label: '10-50', min: 10, max: 50 },
+    { label: '50-70', min: 50, max: 70 },
+    { label: '80-90', min: 80, max: 90 },
+    { label: '90-100', min: 90, max: 100 }
+  ]
+  const bucketed = ranges.map(r => {
+    const trades = closedTrades.filter(t => {
+      const score = Number(t.confidence_score)
+      if(!Number.isFinite(score)) return false
+      return score >= r.min && score <= r.max
+    })
+    const acc = trades.reduce((out, t) => {
+      const profit = typeof t.profit === 'number'
+        ? t.profit
+        : ((t.close_price!=null && t.buy_price!=null && t.buy_amount!=null) ? (t.close_price - t.buy_price) * t.buy_amount : 0)
+      const cost = (t.buy_price!=null && t.buy_amount!=null) ? (t.buy_price * t.buy_amount) : 0
+      return { profit: out.profit + (profit || 0), cost: out.cost + (cost || 0), count: out.count + 1 }
+    }, { profit: 0, cost: 0, count: 0 })
+    return Object.assign({}, r, acc)
+  })
+  listEl.innerHTML = ''
+  if(summaryEl) summaryEl.textContent = ''
+  for(const b of bucketed){
+    const value = (view === 'pct') ? (b.cost ? (b.profit / b.cost) * 100 : null) : b.profit
+    const text = (view === 'pct') ? formatSignedPct(value) : formatSignedUsd(value)
+    const color = (value != null && value < 0) ? 'var(--profit-neg)' : 'var(--profit-pos)'
+    const row = document.createElement('div')
+    row.className = 'model-item'
+    row.innerHTML = `
+      <div class="model-range">${b.label}</div>
+      <div class="model-profit" style="color:${color}">${text}</div>
+    `
+    listEl.appendChild(row)
+  }
+}
+
 function setActiveTab(tab){
   const panels = document.querySelectorAll('.tab-panel')
   const tabs = document.querySelectorAll('.tab')
@@ -503,8 +551,10 @@ function setActiveTab(tab){
   const tagFilter = document.getElementById('tagFilter')
   const closedSearch = document.getElementById('closedSearch')
   const closedSort = document.getElementById('closedSort')
+  const sortSignalsSelect = document.getElementById('sortSignals')
   if(search) search.style.display = (tab === 'signals') ? '' : 'none'
   if(tagFilter) tagFilter.style.display = (tab === 'signals') ? '' : 'none'
+  if(sortSignalsSelect) sortSignalsSelect.style.display = (tab === 'signals') ? '' : 'none'
   if(closedSearch) closedSearch.style.display = (tab === 'closed') ? '' : 'none'
   if(closedSort) closedSort.style.display = (tab === 'closed') ? '' : 'none'
 }
@@ -552,6 +602,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const closedSearch = document.getElementById('closedSearch')
   const closedSort = document.getElementById('closedSort')
   const closedViewToggle = document.getElementById('closedViewToggle')
+  const confidenceViewToggle = document.getElementById('confidenceViewToggle')
   const sortSignalsSelect = document.getElementById('sortSignals')
   const tabs = document.querySelectorAll('.tab')
   const themeToggle = document.getElementById('themeToggle')
@@ -592,6 +643,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const next = getClosedView() === 'usd' ? 'pct' : 'usd'
     setClosedView(next)
     renderClosedTrades()
+    renderConfidenceModel()
+  })
+  if(confidenceViewToggle) confidenceViewToggle.addEventListener('click', ()=>{
+    const next = getClosedView() === 'usd' ? 'pct' : 'usd'
+    setClosedView(next)
+    renderClosedTrades()
+    renderConfidenceModel()
   })
   // detail modal handled by top-level `openDetail()`
   const closeBtn = document.getElementById('detailClose')
@@ -609,10 +667,70 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }
   })
 
+  // promo modal (once per 24h)
+  const promoModal = document.getElementById('promoModal')
+  const promoClose = document.getElementById('promoClose')
+  const promoCountdown = document.getElementById('promoCountdown')
+  const promoKey = 'promo_last_seen'
+  const promoDismissKey = 'promo_dont_show'
+  const promoTarget = new Date('2026-06-01T00:00:00Z')
+  function shouldShowPromo(){
+    if(localStorage.getItem(promoDismissKey) === '1') return false
+    const last = Number(localStorage.getItem(promoKey) || 0)
+    const now = Date.now()
+    return (now - last) > 10 * 60 * 1000
+  }
+  function closePromo(){
+    if(promoModal){
+      promoModal.classList.remove('show')
+      promoModal.style.display = 'none'
+    }
+    localStorage.setItem(promoKey, String(Date.now()))
+  }
+  function renderPromoCountdown(){
+    if(!promoCountdown) return
+    const now = new Date()
+    let diff = promoTarget.getTime() - now.getTime()
+    if(diff < 0) diff = 0
+    const sec = Math.floor(diff / 1000)
+    const days = Math.floor(sec / 86400)
+    const hours = Math.floor((sec % 86400) / 3600)
+    const mins = Math.floor((sec % 3600) / 60)
+    const secs = sec % 60
+    promoCountdown.innerHTML = `
+      <div class="promo-pill"><div class="num">${days}</div><div class="label">Days</div></div>
+      <div class="promo-pill"><div class="num">${hours}</div><div class="label">Hours</div></div>
+      <div class="promo-pill"><div class="num">${mins}</div><div class="label">Mins</div></div>
+      <div class="promo-pill"><div class="num">${secs}</div><div class="label">Secs</div></div>
+    `
+  }
+  if(promoModal && shouldShowPromo()){
+    const promoDontShow = document.getElementById('promoDontShow')
+    promoModal.style.display = 'flex'
+    promoModal.classList.add('show')
+    renderPromoCountdown()
+    const timer = setInterval(renderPromoCountdown, 1000)
+    if(promoDontShow){
+      promoDontShow.addEventListener('change', ()=>{
+        if(promoDontShow.checked) localStorage.setItem(promoDismissKey, '1')
+        else localStorage.removeItem(promoDismissKey)
+      })
+    }
+    if(promoClose) promoClose.addEventListener('click', ()=>{ clearInterval(timer); closePromo() })
+    promoModal.addEventListener('click', (e)=>{
+      if(e.target === promoModal){
+        clearInterval(timer)
+        closePromo()
+      }
+    })
+    window.addEventListener('beforeunload', ()=> clearInterval(timer))
+  }
+
   setClosedView(getClosedView())
   redraw()
   renderAchievements()
   renderClosedTrades()
+  renderConfidenceModel()
   setActiveTab('signals')
   for(const t of tabs){
     t.addEventListener('click', ()=> setActiveTab(t.dataset.tab))

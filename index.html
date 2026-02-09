@@ -48,6 +48,35 @@
       .tab.active{color:var(--text);border-color:rgba(255,255,255,0.2);box-shadow:0 6px 16px rgba(0,0,0,0.12)}
       .tab-panel{display:none}
       .tab-panel.show{display:block}
+      .model-panel{margin-top:14px}
+      .model-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+      .model-copy{color:var(--muted);font-size:13px;max-width:720px}
+      .model-list{display:grid;gap:12px;margin-top:14px}
+      .model-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:12px;background:linear-gradient(180deg,var(--card),var(--card-end));border:1px solid rgba(255,255,255,0.03)}
+      .model-range{font-weight:600}
+      .model-profit{font-weight:700}
+      .promo-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.62);backdrop-filter:blur(4px);z-index:1000}
+      .promo-backdrop.show{display:flex}
+      .promo-card{background:linear-gradient(180deg,var(--card),var(--card-end));border:1px solid rgba(255,255,255,0.08);border-radius:16px;max-width:760px;width:92%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+      .promo-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+      .promo-title{font-size:20px;font-weight:700}
+      .neon-text{background:linear-gradient(90deg,#00d1ff 0%,#409cff 60%,#00d1ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 12px rgba(0,209,255,0.35)}
+      .promo-sub{color:var(--muted);font-size:13px;margin-top:4px}
+      .promo-countdown{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+      .promo-pill{padding:8px 10px;border-radius:12px;background:var(--glass);border:1px solid rgba(255,255,255,0.08);min-width:70px;text-align:center}
+      .promo-pill .num{font-size:18px;font-weight:700;color:var(--accent)}
+      .promo-pill .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px}
+      .promo-table{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06)}
+      .promo-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;padding:10px 12px;align-items:center}
+      .promo-row.head{background:rgba(255,255,255,0.03);font-weight:600}
+      .promo-row:nth-child(even){background:rgba(255,255,255,0.02)}
+      .promo-cell{font-size:13px}
+      .promo-check{font-weight:700}
+      .promo-check.y{color:var(--profit-pos)}
+      .promo-check.n{color:var(--profit-neg)}
+      .promo-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+      .promo-prices{font-size:13px;color:var(--muted)}
+      .promo-close{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
       .closed-controls{display:flex;gap:12px;align-items:center;margin-top:12px}
       .view-toggle{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:0;border-radius:8px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;min-width:44px;justify-content:center;height:34px;position:relative}
       .view-toggle .icon{font-weight:700;font-size:14px;letter-spacing:0.3px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 220ms ease}
@@ -61,8 +90,23 @@
       .neon button:hover,
       .neon input:hover,
       .neon select:hover{
-        box-shadow:0 0 0 1px rgba(0,209,255,0.6), 0 0 12px rgba(255,0,204,0.35), 0 0 22px rgba(64,156,255,0.35);
-        border-color:rgba(0,209,255,0.7);
+        box-shadow:0 0 0 1px rgba(0,209,255,0.9), 0 0 16px rgba(64,156,255,0.65), 0 0 30px rgba(0,209,255,0.45);
+        border-color:rgba(0,209,255,0.9);
+      }
+      .neon .card:hover,
+      .neon .closed-item:hover,
+      .neon .tab:hover,
+      .neon .theme-toggle:hover,
+      .neon .view-toggle:hover,
+      .neon button:hover,
+      .neon input:hover,
+      .neon select:hover{
+        animation: neonGlow 2.4s ease-in-out infinite;
+      }
+      @keyframes neonGlow{
+        0%{ box-shadow:0 0 0 1px rgba(0,209,255,0.95), 0 0 14px rgba(64,156,255,0.7), 0 0 26px rgba(0,209,255,0.5); }
+        50%{ box-shadow:0 0 0 1px rgba(0,209,255,1), 0 0 20px rgba(0,209,255,0.8), 0 0 34px rgba(64,156,255,0.65); }
+        100%{ box-shadow:0 0 0 1px rgba(0,209,255,0.95), 0 0 14px rgba(64,156,255,0.7), 0 0 26px rgba(0,209,255,0.5); }
       }
       .closed-controls input[type="search"]{width:240px}
       .closed-list{display:grid;gap:12px;margin-top:14px}
@@ -158,6 +202,7 @@
           <button class="tab active" data-tab="signals" role="tab" aria-selected="true">Signals</button>
           <button class="tab" data-tab="achievements" role="tab" aria-selected="false">Achievements</button>
           <button class="tab" data-tab="closed" role="tab" aria-selected="false">Closed Trades</button>
+          <button class="tab" data-tab="confidence" role="tab" aria-selected="false">Confidence Score™</button>
         </div>
         <section id="tab-signals" class="tab-panel active" role="tabpanel">
           <div id="stocks" class="grid"></div>
@@ -201,6 +246,23 @@
           <div id="closedSummary" class="small" style="margin-top:10px;color:var(--muted)"></div>
           <div id="closedList" class="closed-list"></div>
         </section>
+        <section id="tab-confidence" class="tab-panel" role="tabpanel">
+          <div class="model-panel">
+            <div class="model-header">
+              <div>
+                <div class="ticker">Confidence Score™ Model</div>
+                <div class="model-copy">The Confidence Score™ blends fundamentals, technicals, and news momentum to rank swing-trade setups. Below is how closed trade performance stacks up across score ranges.</div>
+              </div>
+              <button id="confidenceViewToggle" class="view-toggle" title="Toggle $ / % view" aria-pressed="false">
+                <span class="icon usd">$</span>
+                <span class="icon pct">%</span>
+                <span class="sr-only">Toggle profit view</span>
+              </button>
+            </div>
+            <div id="confidenceSummary" class="small" style="margin-top:10px;color:var(--muted)"></div>
+            <div id="confidenceModelList" class="model-list"></div>
+          </div>
+        </section>
       </main>
 
       <footer id="footer-year">© <span id="current-year"></span> Loki Clarke — This page is updated regularly.<br>Disclaimer: This site is for informational purposes only and does not constitute financial or investment advice. Always do your own research before making investment decisions.</footer>
@@ -210,6 +272,58 @@
       document.getElementById('current-year').textContent = new Date().getFullYear();
     </script>
     <script src="viewer_script.js"></script>
+    <!-- Promo modal -->
+    <div id="promoModal" class="promo-backdrop" role="dialog" aria-modal="true" aria-labelledby="promoTitle" style="display:none">
+      <div class="promo-card">
+        <div class="promo-header">
+          <div>
+            <div id="promoTitle" class="promo-title"><span class="neon-text">NEON</span> launches June 1, 2026</div>
+            <div class="promo-sub">Countdown to when the app becomes PAID</div>
+          </div>
+          <button id="promoClose" class="promo-close" aria-label="Close">Close</button>
+        </div>
+        <div id="promoCountdown" class="promo-countdown"></div>
+        <div class="promo-table" role="table" aria-label="Free vs NEON comparison">
+          <div class="promo-row head" role="row">
+            <div class="promo-cell" role="columnheader">Feature</div>
+            <div class="promo-cell" role="columnheader">Free</div>
+            <div class="promo-cell" role="columnheader"><span class="neon-text">NEON</span></div>
+          </div>
+          <div class="promo-row" role="row">
+            <div class="promo-cell">No Ads</div>
+            <div class="promo-cell promo-check n">X</div>
+            <div class="promo-cell promo-check y">✓</div>
+          </div>
+          <div class="promo-row" role="row">
+            <div class="promo-cell">Access to All Signals</div>
+            <div class="promo-cell promo-check y">✓</div>
+            <div class="promo-cell promo-check y">✓</div>
+          </div>
+          <div class="promo-row" role="row">
+            <div class="promo-cell">Confidence Score™</div>
+            <div class="promo-cell promo-check n">X</div>
+            <div class="promo-cell promo-check y">✓</div>
+          </div>
+          <div class="promo-row" role="row">
+            <div class="promo-cell">Signal Notifications</div>
+            <div class="promo-cell promo-check y">✓</div>
+            <div class="promo-cell promo-check y">✓</div>
+          </div>
+          <div class="promo-row" role="row">
+            <div class="promo-cell">Early access to new features</div>
+            <div class="promo-cell promo-check n">X</div>
+            <div class="promo-cell promo-check y">✓</div>
+          </div>
+        </div>
+        <div class="promo-footer">
+          <div class="promo-prices">NEON pricing: $3.99 USD / month or $30 USD / year</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)">
+            <input id="promoDontShow" type="checkbox" />
+            Don’t show again
+          </label>
+        </div>
+      </div>
+    </div>
     <!-- Detail modal for viewer -->
     <div id="detailModal" class="modal" style="display:none;position:fixed;inset:0;backdrop-filter:blur(2px);background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
       <div class="modal-card" style="background:var(--card);padding:18px;border-radius:12px;max-width:640px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
@@ -226,7 +340,7 @@
                   <div><strong>Maximum Risk</strong><div id="d_max_risk" class="small"></div></div>
                   <div><strong>Target Price</strong><div id="d_target_price" class="small"></div></div>
                   <div><strong>Stop Loss</strong><div id="d_stop_loss" class="small"></div></div>
-                  <div><strong>Confidence Score (/100)</strong><div id="d_confidence" class="small"></div></div>
+                  <div><strong>Confidence Score™ (/100)</strong><div id="d_confidence" class="small"></div></div>
                   <div><strong>Entry Date</strong><div id="d_created_at" class="small"></div></div>
                   <div><strong>Close Price</strong><div id="d_close_price" class="small"></div></div>
                   <div><strong>Close Date</strong><div id="d_closed_at" class="small"></div></div>
