@@ -35,6 +35,7 @@ function formatConfidence(v){
   if(typeof v !== 'number' || !Number.isFinite(v)) return '0'
   return Number.isInteger(v) ? String(v) : v.toFixed(1)
 }
+function clamp(n, min, max){ return Math.max(min, Math.min(max, n)) }
 
 // Theme handling
 function applySavedTheme(){
@@ -276,6 +277,8 @@ function applyFilter(stocks, q, tag){
   }
   return list
 }
+
+// (Removed) live "Now" price fetch
 
 function sortSignalsByRecent(list){
   return list.slice().sort((a,b)=>{
@@ -576,21 +579,114 @@ async function openDetail(stockOrTicker, source='signals'){
   setText('d_ticker', s.ticker || sym)
   setText('d_exchange', s.exchange || '')
   setText('d_name', s.name || '')
-  setText('d_buy_price', typeof s.buy_price === 'number' ? s.buy_price.toFixed(2) : (s.buy_price||'-'))
   setText('d_buy_amount', s.buy_amount ?? '-')
   setText('d_expected_profit', s.expected_profit != null ? (typeof s.expected_profit === 'number' ? s.expected_profit + '%' : s.expected_profit) : '-')
   setText('d_max_risk', s.max_risk != null ? (typeof s.max_risk === 'number' ? s.max_risk + '%' : s.max_risk) : '-')
-  setText('d_target_price', s.target_price != null ? (typeof s.target_price === 'number' ? s.target_price.toFixed(2) : s.target_price) : '-')
-  setText('d_stop_loss', s.stop_loss != null ? (typeof s.stop_loss === 'number' ? s.stop_loss.toFixed(2) : s.stop_loss) : '-')
   setText('d_confidence', s.confidence_score != null ? (formatConfidence(Number(s.confidence_score)) + '/100') : '0/100')
   setText('d_created_at', s.created_at ? new Date(s.created_at).toLocaleString() : '-')
-  setText('d_close_price', s.close_price != null ? (typeof s.close_price === 'number' ? s.close_price.toFixed(2) : s.close_price) : '-')
   setText('d_closed_at', s.closed_at ? new Date(s.closed_at).toLocaleString() : '-')
   const view = getClosedView()
   const pct = (s.close_price!=null && s.buy_price!=null && s.buy_price !== 0) ? ((s.close_price - s.buy_price) / s.buy_price) * 100 : null
   const profitText = (view === 'pct') ? (pct!=null ? formatSignedPct(pct) : '-') : (s.profit != null ? (typeof s.profit === 'number' ? formatSignedUsd(s.profit) : s.profit) : '-')
-  setText('d_profit', profitText)
   setHtml('d_notes', s.notes || '')
+  renderConfidenceGauge(s.confidence_score)
+  renderPriceLine(s, profitText, null)
+}
+
+function renderConfidenceGauge(score){
+  const confArc = document.getElementById('d_confidence_arc')
+  const confScore = clamp(Number(score||0), 0, 100)
+  if(confArc){
+    const r = 38
+    const circ = 2 * Math.PI * r
+    confArc.setAttribute('stroke-dasharray', String(circ))
+    confArc.setAttribute('stroke-dashoffset', String(circ * (1 - confScore/100)))
+  }
+}
+
+function renderPriceLine(s, profitText, currentPrice){
+  const priceTrack = document.getElementById('d_price_track')
+  const profitBar = document.getElementById('d_price_profit')
+  const markers = {
+    stop: document.getElementById('d_marker_stop'),
+    buy: document.getElementById('d_marker_buy'),
+    target: document.getElementById('d_marker_target'),
+    close: document.getElementById('d_marker_close'),
+    now: document.getElementById('d_marker_now')
+  }
+  const info = document.getElementById('d_price_info')
+  const directionEl = document.getElementById('d_trade_direction')
+  const action = (s.action || s.type || '').toString().toLowerCase()
+  const isSell = action === 'sell'
+  const actionLabel = isSell ? 'Sell' : 'Buy'
+  const prices = [
+    { key: 'stop', label: 'Stop', value: typeof s.stop_loss === 'number' ? s.stop_loss : null },
+    { key: 'buy', label: actionLabel, value: typeof s.buy_price === 'number' ? s.buy_price : null },
+    { key: 'target', label: 'Target', value: typeof s.target_price === 'number' ? s.target_price : null },
+    { key: 'close', label: 'Close', value: typeof s.close_price === 'number' ? s.close_price : null },
+    { key: 'now', label: 'Now', value: null }
+  ].filter(p => typeof p.value === 'number' && Number.isFinite(p.value))
+  if(priceTrack){
+    if(prices.length === 0){
+      if(info) info.textContent = 'No price data available.'
+      if(profitBar) profitBar.style.display = 'none'
+      for(const k in markers){ if(markers[k]) markers[k].style.display = 'none' }
+    } else {
+      let min = Math.min(...prices.map(p=>p.value))
+      let max = Math.max(...prices.map(p=>p.value))
+      if(min === max){ min = min * 0.95; max = max * 1.05 }
+      const pad = (max - min) * 0.08
+      min -= pad; max += pad
+      const toPct = (v)=> clamp(((v - min) / (max - min)) * 100, 0, 100)
+      let defaultInfo = ''
+      for(const p of prices){
+        const el = markers[p.key]
+        if(!el) continue
+        el.style.display = ''
+        el.style.left = `${toPct(p.value)}%`
+        el.setAttribute('title', `${p.label}: ${formatUsdFixed(p.value)}`)
+        const labelEl = el.querySelector('.label')
+        if(labelEl) labelEl.textContent = p.label
+        el.onmouseenter = ()=>{ if(info) info.textContent = `${p.label}: ${formatUsdFixed(p.value)}` }
+        el.onmouseleave = ()=>{ if(info && defaultInfo) info.textContent = defaultInfo }
+        el.onclick = ()=>{ if(info) info.textContent = `${p.label}: ${formatUsdFixed(p.value)}` }
+      }
+      // hide missing markers
+      for(const k of Object.keys(markers)){
+        if(!prices.find(p=>p.key===k) && markers[k]) markers[k].style.display = 'none'
+      }
+      // profit segment for closed trades
+      if(profitBar){
+        if(s.close_price!=null && s.buy_price!=null){
+          const left = toPct(Math.min(s.buy_price, s.close_price))
+          const right = toPct(Math.max(s.buy_price, s.close_price))
+          profitBar.style.display = ''
+          profitBar.style.left = `${left}%`
+          profitBar.style.width = `${Math.max(0, right - left)}%`
+          const pnl = isSell ? (s.buy_price - s.close_price) : (s.close_price - s.buy_price)
+          profitBar.style.background = pnl >= 0 ? 'var(--profit-pos)' : 'var(--profit-neg)'
+        } else {
+          profitBar.style.display = 'none'
+        }
+      }
+      if(info){
+        const parts = prices.map(p=> `${p.label}: ${formatUsdFixed(p.value)}`)
+        defaultInfo = parts.join(' • ')
+        info.textContent = defaultInfo
+      }
+    }
+  }
+
+  if(directionEl){
+    const buy = typeof s.buy_price === 'number' ? s.buy_price : null
+    const target = typeof s.target_price === 'number' ? s.target_price : null
+    if(buy != null && target != null){
+      const right = target >= buy
+      directionEl.innerHTML = `<span class="arrow">${right ? '→' : '←'}</span><span class="label">${right ? 'Target Right' : 'Target Left'}</span>`
+    } else {
+      directionEl.innerHTML = `<span class="arrow">→</span><span class="label">Direction</span>`
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{

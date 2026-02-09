@@ -132,6 +132,27 @@
       .modal.show{opacity:1}
       .modal-card{transform:translateY(-12px);opacity:0;transition:transform 260ms ease, opacity 260ms ease}
       .modal.show .modal-card{transform:translateY(0);opacity:1}
+      .gauge{display:flex;align-items:center;gap:14px}
+      .gauge svg{width:90px;height:90px;transform:rotate(-90deg)}
+      .gauge .track{stroke:rgba(255,255,255,0.08);stroke-width:10;fill:none}
+      .gauge .value{stroke:var(--accent);stroke-width:10;fill:none;stroke-linecap:round}
+      .gauge .gauge-text{display:flex;flex-direction:column;gap:4px}
+      .gauge .gauge-score{font-size:20px;font-weight:700;color:var(--accent)}
+      .gauge .gauge-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+      .price-line{grid-column:1/-1;display:flex;flex-direction:column;gap:12px}
+      .price-line-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+      .trade-direction{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+      .trade-direction .arrow{font-size:14px;font-weight:700}
+      .price-track{position:relative;height:6px;border-radius:999px;background:rgba(255,255,255,0.08);margin-top:12px}
+      .price-profit{position:absolute;top:0;height:6px;border-radius:999px}
+      .price-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid var(--accent);box-shadow:0 0 0 2px rgba(0,0,0,0.4);cursor:pointer;transition:transform .12s, box-shadow .12s}
+      .price-marker:hover{transform:translate(-50%,-50%) scale(1.15);box-shadow:0 0 12px rgba(0,209,255,0.5)}
+      .price-marker[data-kind="stop"]{border-color:#ff6b6b}
+      .price-marker[data-kind="target"]{border-color:#00d1ff}
+      .price-marker[data-kind="buy"]{border-color:#ffd166}
+      .price-marker[data-kind="close"]{border-color:#9bff8c}
+      .price-marker .label{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);white-space:nowrap}
+      .price-info{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
       /* Smooth theme transition */
       body, header, .card, .controls, input, select, footer, .theme-toggle, .logo { transition: background-color 560ms ease, color 560ms ease, border-color 560ms ease, box-shadow 560ms ease; }
       :root.theme-fade *, .theme-fade * { transition: background-color 560ms ease, color 560ms ease, border-color 560ms ease, box-shadow 560ms ease !important }
@@ -334,17 +355,38 @@
                   <div><strong>Ticker</strong><div id="d_ticker" class="small"></div></div>
                   <div><strong>Exchange</strong><div id="d_exchange" class="small"></div></div>
                   <div style="grid-column:1/-1"><strong>Name</strong><div id="d_name" class="small"></div></div>
-                  <div><strong>Buy Price</strong><div id="d_buy_price" class="small"></div></div>
                   <div><strong>Buy Amount</strong><div id="d_buy_amount" class="small"></div></div>
                   <div><strong>Expected Profit</strong><div id="d_expected_profit" class="small"></div></div>
                   <div><strong>Maximum Risk</strong><div id="d_max_risk" class="small"></div></div>
-                  <div><strong>Target Price</strong><div id="d_target_price" class="small"></div></div>
-                  <div><strong>Stop Loss</strong><div id="d_stop_loss" class="small"></div></div>
-                  <div><strong>Confidence Score™ (/100)</strong><div id="d_confidence" class="small"></div></div>
+                  <div style="grid-column:1/-1">
+                    <strong>Confidence Score™</strong>
+                    <div class="gauge" style="margin-top:8px">
+                      <svg viewBox="0 0 100 100" aria-hidden="true">
+                        <circle class="track" cx="50" cy="50" r="38"></circle>
+                        <circle id="d_confidence_arc" class="value" cx="50" cy="50" r="38" stroke-dasharray="239" stroke-dashoffset="239"></circle>
+                      </svg>
+                      <div class="gauge-text">
+                        <div id="d_confidence" class="gauge-score">0/100</div>
+                        <div class="gauge-label">Confidence</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="price-line">
+                    <div class="price-line-header">
+                      <strong>Price Line</strong>
+                      <span id="d_trade_direction" class="trade-direction"><span class="arrow">→</span><span class="label">Direction</span></span>
+                    </div>
+                    <div class="price-track" id="d_price_track">
+                      <div id="d_price_profit" class="price-profit" style="display:none"></div>
+                      <div id="d_marker_stop" class="price-marker" data-kind="stop" style="display:none"><div class="label">Stop</div></div>
+                      <div id="d_marker_buy" class="price-marker" data-kind="buy" style="display:none"><div class="label">Buy</div></div>
+                      <div id="d_marker_target" class="price-marker" data-kind="target" style="display:none"><div class="label">Target</div></div>
+                      <div id="d_marker_close" class="price-marker" data-kind="close" style="display:none"><div class="label">Close</div></div>
+                    </div>
+                    <div id="d_price_info" class="price-info"></div>
+                  </div>
                   <div><strong>Entry Date</strong><div id="d_created_at" class="small"></div></div>
-                  <div><strong>Close Price</strong><div id="d_close_price" class="small"></div></div>
                   <div><strong>Close Date</strong><div id="d_closed_at" class="small"></div></div>
-                  <div><strong>Profit</strong><div id="d_profit" class="small"></div></div>
                   <div style="grid-column:1/-1"><strong>Notes</strong><div id="d_notes" class="small"></div></div>
                 </div>
               </div>
