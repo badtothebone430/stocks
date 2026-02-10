@@ -338,9 +338,10 @@ function formatSignedUsd(amount){
 }
 
 function formatSignedPct(pct){
-  if(typeof pct !== 'number') return '-'
-  const sign = pct < 0 ? '-' : '+'
-  return sign + Math.abs(pct).toFixed(2) + '%'
+  const n = Number(pct)
+  if(!Number.isFinite(n)) return '-'
+  const sign = (n < 0 || Object.is(n, -0)) ? '-' : '+'
+  return sign + Math.abs(n).toFixed(2) + '%'
 }
 
 function getClosedView(){
