@@ -16,5 +16,23 @@
     "close_price": null,
     "closed_at": null,
     "profit": null
+  },
+  {
+    "ticker": "MDB",
+    "exchange": "NASDAQ",
+    "name": "MongoDB",
+    "buy_price": 510.19,
+    "expected_profit": 20,
+    "max_risk": 3,
+    "target_price": 250,
+    "stop_loss": 350,
+    "confidence_score": 90,
+    "buy_amount": 71,
+    "action": "sell",
+    "notes": "Earnings volatility",
+    "created_at": "2026-03-02T19:50:00.000Z",
+    "close_price": null,
+    "closed_at": null,
+    "profit": null
   }
 ]
