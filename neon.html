@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Loki Clarke's Stocks & Signals</title>
+    <title>FREE — Loki Clarke's Stocks & Signals</title>
     <link rel="icon" href="icon.png" />
     <link rel="apple-touch-icon" href="icon.png" />
     <link rel="manifest" href="manifest.json" />
@@ -201,6 +201,41 @@
         /* pull the sidebar up to better align with the top controls row */
         .signals-sidebar{margin-top:-78px}
       }
+      .ad-slot{border:1px dashed rgba(255,255,255,0.14);background:rgba(255,255,255,0.03);border-radius:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center}
+      .ad-banner{margin-top:12px;min-height:58px}
+      .ad-side{min-height:74px}
+      .neon-entitled .ad-slot{display:none}
+      @media (max-height:760px){
+        .ad-side{display:none}
+      }
+      .promo-callout{margin-top:12px;padding:12px;border-radius:12px;border:1px solid rgba(0,209,255,0.22);background:linear-gradient(180deg, rgba(0,209,255,0.08), rgba(255,255,255,0.02));display:flex;align-items:center;justify-content:space-between;gap:12px}
+      .promo-cta{background:linear-gradient(90deg,#00d1ff 0%,#409cff 70%,#00d1ff 100%);border:0;color:#071018;padding:9px 12px;border-radius:10px;font-weight:800;cursor:pointer;white-space:nowrap}
+      .promo-cta:hover{filter:brightness(1.05)}
+      .neon-entitled #confidencePromo{display:none !important}
+      .locked-pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);font-size:11px;color:var(--muted);margin-left:8px;vertical-align:middle}
+      .blurred-num{display:inline-block;filter:blur(3px);opacity:0.9;transform:translateZ(0);user-select:none;white-space:nowrap}
+      .side-card.neon-locked{position:relative;cursor:pointer;overflow:hidden}
+      .side-card.neon-locked .lockable{filter:blur(8px);opacity:0.7;pointer-events:none}
+      .side-card.neon-locked::before{
+        content:"";
+        position:absolute;inset:0;
+        background:radial-gradient(60% 60% at 50% 25%, rgba(0,209,255,0.18), rgba(0,0,0,0) 70%);
+        pointer-events:none;
+      }
+      .side-card.neon-locked::after{
+        content:"🔒  NEON";
+        position:absolute;inset:0;
+        display:flex;align-items:center;justify-content:center;
+        font-weight:800;letter-spacing:0.6px;
+        color:rgba(0,209,255,0.95);
+        text-shadow:0 0 18px rgba(0,209,255,0.55), 0 0 40px rgba(64,156,255,0.35);
+      }
+      .card.is-locked{position:relative}
+      .card.is-locked::after{content:"NEON locked";position:absolute;top:10px;right:10px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--muted);border:1px solid rgba(255,255,255,0.14);background:rgba(0,0,0,0.22)}
+      .tab.locked{position:relative;opacity:0.9}
+      .tab.locked::after{content:"NEON";margin-left:8px;font-size:11px;color:var(--muted)}
+      .neon-only{display:none}
+      .neon-entitled .neon-only{display:block}
       .card{background:linear-gradient(180deg,var(--card),var(--card-end));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.06);transition:transform .12s,box-shadow .12s}
       .card{cursor:pointer}
       .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.12)}
@@ -251,14 +286,16 @@
     </style>
   </head>
   <body>
+    <!-- 👋 Hey there. If you're reading this in DevTools: FREE mode uses placeholder/obfuscated metrics on purpose. Unlock NEON for real confidence + sizing. -->
+    <div id="snoopNote" aria-hidden="true" style="display:none" data-note="We see you 👀 — these numbers are placeholders in FREE. NEON unlocks the real data."></div>
     <div class="wrap">
       <header>
         <div class="header-top">
           <div class="brand">
             <img class="logo" src="icon.png" alt="Loki logo" />
             <div>
-              <h1>Loki Clarke's Stocks & Signals</h1>
-              <div class="sub">The easiest way to swing trade</div>
+              <h1>Stocks & Signals (Free)</h1>
+              <div class="sub">NEON features are locked in this build</div>
             </div>
           </div>
         </div>
@@ -296,6 +333,8 @@
           <button class="tab" data-tab="closed" role="tab" aria-selected="false">Closed Trades</button>
           <button class="tab" data-tab="confidence" role="tab" aria-selected="false">Confidence Score™</button>
         </div>
+        <div class="small" style="margin-top:10px;color:var(--muted)">This is a clone of <strong>index.html</strong> for the FREE experience. NEON-only features show a lock and open the upgrade modal.</div>
+        <div class="ad-slot ad-banner" data-ad-slot="top-banner">Ad placeholder</div>
         <section id="tab-signals" class="tab-panel active" role="tabpanel">
           <div class="signals-layout">
             <div class="signals-main">
@@ -303,15 +342,20 @@
               <div id="stocks" class="grid"></div>
             </div>
             <aside id="signalsSidebar" class="signals-sidebar" aria-label="Positions sidebar">
-              <div class="side-card">
-                <div class="side-title">Position Sizes</div>
-                <canvas id="posPie" width="220" height="220" style="width:100%;max-width:220px;height:auto;margin-top:8px"></canvas>
-                <div id="posLegend" class="side-legend"></div>
+              <div id="posCard" class="side-card">
+                <div class="lockable">
+                  <div class="side-title">Position Sizes</div>
+                  <canvas id="posPie" width="220" height="220" style="width:100%;max-width:220px;height:auto;margin-top:8px"></canvas>
+                  <div id="posLegend" class="side-legend"></div>
+                </div>
               </div>
-              <div class="side-card">
-                <div class="side-title">Stats</div>
-                <div id="posStats" class="side-stats"></div>
+              <div id="statsCard" class="side-card">
+                <div class="lockable">
+                  <div class="side-title">Stats</div>
+                  <div id="posStats" class="side-stats"></div>
+                </div>
               </div>
+              <div class="side-card ad-slot ad-side" data-ad-slot="sidebar">Ad placeholder</div>
             </aside>
           </div>
         </section>
@@ -380,6 +424,13 @@
                 <span class="sr-only">Toggle profit view</span>
               </button>
             </div>
+            <div id="confidencePromo" class="promo-callout" role="note" style="display:none">
+              <div>
+                <div style="font-weight:700">Did you miss these moves?</div>
+                <div class="small" style="margin-top:4px">Unlock Confidence Score™ on every signal and catch setups on time with NEON.</div>
+              </div>
+              <button id="confidencePromoBtn" class="promo-cta" type="button">Unlock NEON</button>
+            </div>
             <div id="confidenceSummary" class="small" style="margin-top:10px;color:var(--muted)"></div>
             <div id="confidenceModelList" class="model-list"></div>
           </div>
@@ -392,7 +443,7 @@
     <script>
       document.getElementById('current-year').textContent = new Date().getFullYear();
     </script>
-    <script src="viewer_script.js"></script>
+    <script src="neon_script.js"></script>
     <!-- Promo modal -->
     <div id="promoModal" class="promo-backdrop" role="dialog" aria-modal="true" aria-labelledby="promoTitle" style="display:none">
       <div class="promo-card">
@@ -460,7 +511,7 @@
                   <div><strong>Ticker</strong><div id="d_ticker" class="small"></div></div>
                   <div><strong>Exchange</strong><div id="d_exchange" class="small"></div></div>
                   <div style="grid-column:1/-1"><strong>Name</strong><div id="d_name" class="small"></div></div>
-                  <div><strong>Buy Amount</strong><div id="d_buy_amount" class="small"></div></div>
+                  <div class="neon-only"><strong>Buy Amount</strong><div id="d_buy_amount" class="small"></div></div>
                   <div><strong>Expected Profit</strong><div id="d_expected_profit" class="small"></div></div>
                   <div><strong>Maximum Risk</strong><div id="d_max_risk" class="small"></div></div>
                   <div style="grid-column:1/-1">
