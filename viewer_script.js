@@ -683,8 +683,8 @@ function renderConfidenceModel(){
   if(!listEl) return
   const view = getClosedView()
   const ranges = [
-    { label: '10-50', min: 10, max: 50 },
-    { label: '50-80', min: 50, max: 80 },
+    { label: '50-65', min: 50, max: 65 },
+    { label: '65-80', min: 65, max: 80 },
     { label: '80-90', min: 80, max: 90 },
     { label: '90-100', min: 90, max: 100 }
   ]

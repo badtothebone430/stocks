@@ -212,6 +212,7 @@
       .promo-cta{background:linear-gradient(90deg,#00d1ff 0%,#409cff 70%,#00d1ff 100%);border:0;color:#071018;padding:9px 12px;border-radius:10px;font-weight:800;cursor:pointer;white-space:nowrap}
       .promo-cta:hover{filter:brightness(1.05)}
       .neon-entitled #confidencePromo{display:none !important}
+      .neon-entitled .upgrade-hint{display:none !important}
       .locked-pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);font-size:11px;color:var(--muted);margin-left:8px;vertical-align:middle}
       .blurred-num{display:inline-block;filter:blur(3px);opacity:0.9;transform:translateZ(0);user-select:none;white-space:nowrap}
       .side-card.neon-locked{position:relative;cursor:pointer;overflow:hidden}
@@ -503,56 +504,127 @@
     </div>
     <!-- Detail modal for viewer -->
     <div id="detailModal" class="modal" style="display:none;position:fixed;inset:0;backdrop-filter:blur(2px);background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
-      <div class="modal-card" style="background:var(--card);padding:18px;border-radius:12px;max-width:640px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
-        <button id="detailClose" style="float:right;background:transparent;border:0;color:var(--muted);font-size:18px">✕</button>
-          <h3 id="detailTitle" style="margin:0 0 8px 0">Details</h3>
-              <div id="detailContent">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                  <div><strong>Ticker</strong><div id="d_ticker" class="small"></div></div>
-                  <div><strong>Exchange</strong><div id="d_exchange" class="small"></div></div>
-                  <div style="grid-column:1/-1"><strong>Name</strong><div id="d_name" class="small"></div></div>
-                  <div class="neon-only"><strong>Buy Amount</strong><div id="d_buy_amount" class="small"></div></div>
-                  <div><strong>Expected Profit</strong><div id="d_expected_profit" class="small"></div></div>
-                  <div><strong>Maximum Risk</strong><div id="d_max_risk" class="small"></div></div>
-                  <div style="grid-column:1/-1">
-                    <strong>Confidence Score™</strong>
-                    <div class="gauge" style="margin-top:8px">
-                      <svg viewBox="0 0 100 100" aria-hidden="true">
-                        <circle class="track" cx="50" cy="50" r="38"></circle>
-                        <circle id="d_confidence_arc" class="value" cx="50" cy="50" r="38" stroke-dasharray="239" stroke-dashoffset="239"></circle>
-                      </svg>
-                      <div class="gauge-text">
-                        <div id="d_confidence" class="gauge-score">0/100</div>
-                        <div class="gauge-label">Confidence</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="price-line">
-                    <div class="price-line-header">
-                      <strong>Price Line</strong>
-                      <span id="d_trade_direction" class="trade-direction"><span class="arrow">→</span><span class="label">Direction</span></span>
-                    </div>
-                    <div class="price-track" id="d_price_track">
-                      <div id="d_price_profit" class="price-profit" style="display:none"></div>
-                      <div id="d_marker_stop" class="price-marker" data-kind="stop" style="display:none"><div class="label">Stop</div></div>
-                      <div id="d_marker_buy" class="price-marker" data-kind="buy" style="display:none"><div class="label">Buy</div></div>
-                      <div id="d_marker_target" class="price-marker" data-kind="target" style="display:none"><div class="label">Target</div></div>
-                      <div id="d_marker_close" class="price-marker" data-kind="close" style="display:none"><div class="label">Close</div></div>
-                    </div>
-                    <div id="d_price_info" class="price-info"></div>
-                  </div>
-                  <div><strong>Entry Date</strong><div id="d_created_at" class="small"></div></div>
-                  <div><strong>Close Date</strong><div id="d_closed_at" class="small"></div></div>
-                  <div style="grid-column:1/-1"><strong>Notes</strong><div id="d_notes" class="small"></div></div>
+      <div class="modal-card" style="background:var(--card);padding:18px;border-radius:14px;max-width:720px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+        <div class="detail-head">
+          <div>
+            <div class="detail-kicker">Signal</div>
+            <div id="detailTitle" class="detail-title">Details</div>
+          </div>
+          <button id="detailClose" class="detail-close" aria-label="Close">✕</button>
+        </div>
+        <div id="detailContent">
+          <div class="detail-top">
+            <div class="detail-main">
+              <div class="detail-ticker-row">
+                <div id="d_ticker" class="detail-ticker">—</div>
+                <div id="d_exchange" class="detail-exchange">—</div>
+              </div>
+              <div id="d_name" class="detail-name">—</div>
+              <div class="detail-chips">
+                <div class="detail-chip">
+                  <div class="detail-chip-k">Expected</div>
+                  <div id="d_expected_profit" class="detail-chip-v">-</div>
+                </div>
+                <div class="detail-chip">
+                  <div class="detail-chip-k">Max Risk</div>
+                  <div id="d_max_risk" class="detail-chip-v">-</div>
+                </div>
+                <div class="detail-chip neon-only">
+                  <div class="detail-chip-k">Shares</div>
+                  <div id="d_buy_amount" class="detail-chip-v">-</div>
                 </div>
               </div>
-              <style>
-                /* make detail chart area more spacious */
-                #detailContent .detail-row{display:flex;gap:12px;align-items:center}
-                #detailContent .detail-left{flex:1}
-                #detailChart{width:100%;height:260px;max-width:520px}
-                @media (max-width:520px){ #detailChart{height:200px} }
-              </style>
+            </div>
+            <div class="detail-conf">
+              <div class="detail-section-title">Confidence Score™</div>
+              <div class="gauge" style="margin-top:10px">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle class="track" cx="50" cy="50" r="38"></circle>
+                  <circle id="d_confidence_arc" class="value" cx="50" cy="50" r="38" stroke-dasharray="239" stroke-dashoffset="239"></circle>
+                </svg>
+                <div class="gauge-text">
+                  <div id="d_confidence" class="gauge-score">0/100</div>
+                  <div class="gauge-label">Confidence</div>
+                </div>
+              </div>
+              <div class="small upgrade-hint" style="margin-top:10px;color:var(--muted)">Upgrade to unlock on-signal confidence + sizing</div>
+            </div>
+          </div>
+          <div class="detail-divider"></div>
+          <div class="detail-panel">
+            <div class="detail-panel-head">
+              <div class="detail-section-title">Price Line</div>
+              <div class="detail-panel-actions">
+                <span class="detail-hint">Hover dots</span>
+                <span id="d_trade_direction" class="trade-direction"><span class="arrow">→</span><span class="label">Direction</span></span>
+              </div>
+            </div>
+            <div class="price-track" id="d_price_track" style="margin-top:12px">
+              <div id="d_price_profit" class="price-profit" style="display:none"></div>
+              <div id="d_marker_stop" class="price-marker" data-kind="stop" style="display:none"><div class="label">Stop</div></div>
+              <div id="d_marker_buy" class="price-marker" data-kind="buy" style="display:none"><div class="label">Buy</div></div>
+              <div id="d_marker_target" class="price-marker" data-kind="target" style="display:none"><div class="label">Target</div></div>
+              <div id="d_marker_close" class="price-marker" data-kind="close" style="display:none"><div class="label">Close</div></div>
+            </div>
+            <div id="d_price_info" class="price-info" style="margin-top:10px"></div>
+          </div>
+          <div class="detail-panel" style="margin-top:12px">
+            <div class="detail-bottom">
+              <div class="detail-field">
+                <div class="detail-label">Entry Date</div>
+                <div id="d_created_at" class="detail-value">-</div>
+              </div>
+              <div class="detail-field">
+                <div class="detail-label">Close Date</div>
+                <div id="d_closed_at" class="detail-value">-</div>
+              </div>
+              <div class="detail-field" style="grid-column:1/-1">
+                <div class="detail-label">Notes</div>
+                <div id="d_notes" class="detail-value">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <style>
+          .detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .detail-kicker{font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted)}
+          .detail-title{font-size:18px;font-weight:900;margin-top:4px}
+          .detail-close{background:transparent;border:1px solid rgba(255,255,255,0.12);color:var(--text);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+          .detail-close:hover{border-color:rgba(0,209,255,0.5);box-shadow:0 0 0 1px rgba(0,209,255,0.35), 0 0 18px rgba(0,209,255,0.18)}
+          #detailContent{margin-top:12px}
+          .detail-top{display:grid;grid-template-columns:1fr 260px;gap:14px;align-items:start}
+          .detail-main{min-width:0}
+          .detail-ticker-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+          .detail-ticker{font-size:28px;font-weight:900;letter-spacing:0.3px}
+          .detail-exchange{font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);padding:4px 10px;border-radius:999px}
+          .detail-name{margin-top:6px;color:var(--muted);font-size:14px;line-height:1.35;max-width:520px}
+          .detail-chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+          .detail-chip{border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.03);border-radius:12px;padding:10px 12px;min-width:132px}
+          .detail-chip-k{font-size:11px;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700}
+          .detail-chip-v{margin-top:4px;font-weight:900}
+          .detail-conf{border:1px solid rgba(255,255,255,0.10);background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.00));border-radius:14px;padding:12px}
+          .detail-section-title{font-weight:900}
+          .detail-divider{height:1px;background:rgba(255,255,255,0.06);margin:14px 0}
+          .detail-panel{border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.02);border-radius:14px;padding:12px}
+          .detail-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .detail-panel-actions{display:flex;align-items:center;gap:10px}
+          .detail-hint{font-size:11px;color:var(--muted);border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);padding:3px 10px;border-radius:999px;white-space:nowrap}
+          .detail-panel .trade-direction{color:var(--muted)}
+          .detail-panel .price-track{background:linear-gradient(90deg, rgba(255,80,80,0.06) 0%, rgba(255,255,255,0.06) 45%, rgba(0,209,255,0.08) 100%);border:1px solid rgba(0,209,255,0.14)}
+          .detail-panel .price-track:hover{box-shadow:0 0 0 1px rgba(0,209,255,0.25), 0 0 24px rgba(0,209,255,0.12)}
+          .detail-panel .price-marker{box-shadow:0 0 0 2px rgba(0,0,0,0.35)}
+          .detail-panel .price-track{height:10px;margin-bottom:30px}
+          .detail-panel .price-marker .label{top:22px;background:rgba(0,0,0,0.35);padding:2px 6px;border-radius:999px;border:1px solid rgba(255,255,255,0.10)}
+          .detail-panel .price-info{margin-top:0}
+          .detail-panel .price-profit{filter:drop-shadow(0 0 10px rgba(0,209,255,0.18));opacity:0.9}
+          .detail-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+          .detail-panel .detail-bottom{margin-top:0}
+          .detail-label{font-size:11px;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:800}
+          .detail-value{margin-top:4px;font-size:13px;color:var(--text)}
+          @media (max-width:720px){
+            .detail-top{grid-template-columns:1fr}
+          }
+        </style>
       </div>
     </div>
   </body>

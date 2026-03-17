@@ -305,6 +305,9 @@ function drawDetailChart(canvas, data, options={}){
 
 function renderStockCard(s, totalPosition){
   const el = document.createElement('div'); el.className='card'; el.tabIndex=0; el.role='button'
+  const shares = Number(s.buy_amount)
+  const price = Number(s.buy_price)
+  const positionValue = (Number.isFinite(shares) && Number.isFinite(price)) ? (shares * price) : 0
   const isLockedConfidence = !neonEntitled
   const obfConf = getObfuscatedConfidence(s?.ticker || s?.name || '')
   el.innerHTML = `
@@ -320,7 +323,10 @@ function renderStockCard(s, totalPosition){
     </div>
     <div class="meta">
       <div class="small">
-        ${escapeHtml(s.action || s.type || '')} @ <span class="price">${formatMoney(s.buy_price)}</span>
+        ${escapeHtml(s.action || s.type || '')}
+        ${neonEntitled ? ` ${s.buy_amount ?? ''} @ ` : ' @ '}
+        <span class="price">${formatMoney(s.buy_price)}</span>
+        ${neonEntitled && positionValue > 0 ? `<span class="small" style="margin-left:8px;color:var(--muted)">• ${formatUsdFixed(positionValue)}</span>` : ''}
       </div>
       <div class="small">${formatNotesHtml(s.notes||'')}</div>
     </div>
@@ -821,8 +827,8 @@ function renderConfidenceModel(){
   if(!listEl) return
   const view = getClosedView()
   const ranges = [
-    { label: '10-50', min: 10, max: 50 },
-    { label: '50-80', min: 50, max: 80 },
+    { label: '50-65', min: 50, max: 65 },
+    { label: '65-80', min: 65, max: 80 },
     { label: '80-90', min: 80, max: 90 },
     { label: '90-100', min: 90, max: 100 }
   ]
@@ -920,7 +926,8 @@ async function openDetail(stockOrTicker, source='signals'){
   setText('d_buy_amount', s.buy_amount ?? '-')
   setText('d_expected_profit', s.expected_profit != null ? (typeof s.expected_profit === 'number' ? s.expected_profit + '%' : s.expected_profit) : '-')
   setText('d_max_risk', s.max_risk != null ? (typeof s.max_risk === 'number' ? s.max_risk + '%' : s.max_risk) : '-')
-  if(neonEntitled){
+  const allowRealConfidence = neonEntitled || source === 'closed'
+  if(allowRealConfidence){
     clearBlurred('d_confidence')
     setText('d_confidence', s.confidence_score != null ? (formatConfidence(Number(s.confidence_score)) + '/100') : '0/100')
     renderConfidenceGauge(s.confidence_score)
