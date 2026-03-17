@@ -212,8 +212,11 @@ function drawDetailChart(canvas, data, options={}){
 // Build simple OHLC bars from closes for a nice demo in LightweightCharts
 // lightweight-charts helpers removed — modal now shows structured signal info only
 
-function renderStockCard(s){
+function renderStockCard(s, totalPosition){
   const el = document.createElement('div'); el.className='card'; el.tabIndex=0; el.role='button'
+  const shares = Number(s.buy_amount)
+  const price = Number(s.buy_price)
+  const positionValue = (Number.isFinite(shares) && Number.isFinite(price)) ? (shares * price) : 0
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div>
@@ -226,7 +229,10 @@ function renderStockCard(s){
       </div>
     </div>
     <div class="meta">
-      <div class="small">${escapeHtml(s.action || s.type || '')} ${s.buy_amount ?? ''} @ <span class="price">${formatMoney(s.buy_price)}</span></div>
+      <div class="small">
+        ${escapeHtml(s.action || s.type || '')} ${s.buy_amount ?? ''} @ <span class="price">${formatMoney(s.buy_price)}</span>
+        ${positionValue > 0 ? `<span class="small" style="margin-left:8px;color:var(--muted)">• ${formatUsdFixed(positionValue)}</span>` : ''}
+      </div>
       <div class="small">${formatNotesHtml(s.notes||'')}</div>
     </div>
   `
@@ -234,6 +240,150 @@ function renderStockCard(s){
   el.addEventListener('click', ()=> openDetail(s))
   el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(s) } })
   return el
+}
+
+function getSignalPositionValue(s){
+  const shares = Number(s?.buy_amount)
+  const price = Number(s?.buy_price)
+  if(!Number.isFinite(shares) || !Number.isFinite(price)) return 0
+  return shares * price
+}
+
+function drawPositionPie(canvas, slices, total){
+  if(!canvas) return
+  const ctx = canvas.getContext('2d')
+  if(!ctx) return
+  const dpr = window.devicePixelRatio || 1
+  const cssSize = canvas.clientWidth || 220
+  canvas.width = Math.floor(cssSize * dpr)
+  canvas.height = Math.floor(cssSize * dpr)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+  const w = cssSize
+  const h = cssSize
+  const cx = w / 2
+  const cy = h / 2
+  const radius = Math.min(w, h) / 2 - 10
+
+  ctx.clearRect(0, 0, w, h)
+
+  if(!total || !slices.length){
+    ctx.beginPath()
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+    ctx.lineWidth = 10
+    ctx.arc(cx, cy, radius - 6, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+    ctx.font = '600 12px Inter, Segoe UI, Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('No positions', cx, cy)
+    return
+  }
+
+  const angles = []
+  let start = -Math.PI / 2
+  for(const s of slices){
+    const frac = s.value / total
+    const end = start + frac * Math.PI * 2
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.fillStyle = s.color
+    ctx.arc(cx, cy, radius, start, end)
+    ctx.closePath()
+    ctx.fill()
+    angles.push({ start, end, frac })
+    start = end
+  }
+
+  // donut cutout
+  ctx.beginPath()
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card') || '#0f0f0f'
+  ctx.arc(cx, cy, radius * 0.62, 0, Math.PI * 2)
+  ctx.fill()
+
+  // center label
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#eee'
+  ctx.font = '700 13px Inter, Segoe UI, Arial'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('Total', cx, cy - 10)
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9a9a9a'
+  ctx.font = '600 12px Inter, Segoe UI, Arial'
+  ctx.fillText(formatUsdFixed(total), cx, cy + 10)
+
+  // slice % labels (only when they have enough space)
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#eee'
+  ctx.font = '700 11px Inter, Segoe UI, Arial'
+  for(let i = 0; i < slices.length; i++){
+    const a = angles[i]
+    const pct = a.frac * 100
+    if(pct < 7) continue
+    const mid = (a.start + a.end) / 2
+    const rx = cx + Math.cos(mid) * (radius * 0.78)
+    const ry = cy + Math.sin(mid) * (radius * 0.78)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`${pct.toFixed(0)}%`, rx, ry)
+  }
+}
+
+function renderSignalsSidebar(list, totalPosition){
+  const sidebar = document.getElementById('signalsSidebar')
+  const pie = document.getElementById('posPie')
+  const legend = document.getElementById('posLegend')
+  const stats = document.getElementById('posStats')
+  if(!sidebar || !pie || !legend || !stats) return
+
+  const items = (list || []).map(s => ({
+    ticker: s?.ticker || '',
+    name: s?.name || '',
+    value: getSignalPositionValue(s)
+  })).filter(x => x.value > 0)
+
+  items.sort((a,b)=> b.value - a.value)
+
+  const palette = ['#00d1ff','#409cff','#9bff8c','#ffd166','#ff6b6b','#b77bff','#00ffa8','#ff9bd4']
+  const topN = 6
+  const top = items.slice(0, topN)
+  const rest = items.slice(topN)
+  const restSum = rest.reduce((s,x)=> s + x.value, 0)
+
+  const slices = top.map((x, i)=> Object.assign({}, x, { color: palette[i % palette.length] }))
+  if(restSum > 0){
+    slices.push({ ticker: 'Other', name: 'Other', value: restSum, color: 'rgba(255,255,255,0.22)' })
+  }
+
+  drawPositionPie(pie, slices, totalPosition)
+
+  legend.innerHTML = ''
+  for(const s of slices){
+    const pct = totalPosition > 0 ? (s.value / totalPosition) * 100 : 0
+    const row = document.createElement('div')
+    row.className = 'legend-row'
+    const label = s.ticker === 'Other' ? 'Other' : (s.ticker || s.name || '—')
+    row.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div class="legend-left">
+          <span class="legend-dot" style="background:${s.color}"></span>
+          <span class="legend-name" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+        </div>
+        <div class="legend-bar"><div style="width:${Math.max(2, Math.min(100, pct)).toFixed(1)}%;background:${s.color}"></div></div>
+      </div>
+      <div class="legend-value">${formatUsdFixed(s.value)}<span style="color:var(--muted)"> • ${pct.toFixed(1)}%</span></div>
+    `
+    legend.appendChild(row)
+  }
+
+  const largest = items[0]
+  const smallest = items.length ? items[items.length - 1] : null
+  stats.innerHTML = `
+    <div class="stat-row"><span class="k">Signals</span><span class="v">${list.length}</span></div>
+    <div class="stat-row"><span class="k">Positions</span><span class="v">${items.length}</span></div>
+    <div class="stat-row"><span class="k">Total</span><span class="v">${formatUsdFixed(totalPosition || 0)}</span></div>
+    <div class="stat-row"><span class="k">Largest</span><span class="v">${largest ? `${escapeHtml(largest.ticker || largest.name)} • ${formatUsdFixed(largest.value)}` : '-'}</span></div>
+    <div class="stat-row"><span class="k">Smallest</span><span class="v">${smallest ? `${escapeHtml(smallest.ticker || smallest.name)} • ${formatUsdFixed(smallest.value)}` : '-'}</span></div>
+  `
 }
 
 function extractTagsFromNotes(stocks){
@@ -305,6 +455,12 @@ function sortSignals(list, key){
   }
   if(key === 'confidence_desc'){
     return out.sort((a,b)=> (Number(b.confidence_score)||0) - (Number(a.confidence_score)||0))
+  }
+  if(key === 'pos_desc'){
+    return out.sort((a,b)=> (Number(b.buy_amount)||0) * (Number(b.buy_price)||0) - (Number(a.buy_amount)||0) * (Number(a.buy_price)||0))
+  }
+  if(key === 'pos_asc'){
+    return out.sort((a,b)=> (Number(a.buy_amount)||0) * (Number(a.buy_price)||0) - (Number(b.buy_amount)||0) * (Number(b.buy_price)||0))
   }
   return sortSignalsByRecent(out)
 }
@@ -400,21 +556,49 @@ function applyClosedFilter(list, q){
   })
 }
 
+function getClosedProfit(t){
+  if(typeof t?.profit === 'number') return t.profit
+  const close = Number(t?.close_price)
+  const buy = Number(t?.buy_price)
+  const amount = Number(t?.buy_amount)
+  if(!Number.isFinite(close) || !Number.isFinite(buy) || !Number.isFinite(amount)) return 0
+  return (close - buy) * amount
+}
+
+function getClosedPositionSize(t){
+  const price = Number(t?.buy_price)
+  const shares = Number(t?.buy_amount)
+  if(!Number.isFinite(price) || !Number.isFinite(shares)) return 0
+  return price * shares
+}
+
+function getClosedRecentTs(t){
+  const d = t?.closed_at || t?.created_at
+  if(!d) return 0
+  const ts = new Date(d).getTime()
+  return Number.isNaN(ts) ? 0 : ts
+}
+
 function sortClosedTrades(list, key){
   const out = list.slice()
-  if(key === 'profit_asc') out.sort((a,b)=> (a.profit||0) - (b.profit||0))
-  else if(key === 'profit_desc') out.sort((a,b)=> (b.profit||0) - (a.profit||0))
-  else if(key === 'value_az') out.sort((a,b)=> {
-    const av = (a.name || a.ticker || '').toString()
-    const bv = (b.name || b.ticker || '').toString()
-    return av.localeCompare(bv)
-  })
-  else if(key === 'value_za') out.sort((a,b)=> {
-    const av = (a.name || a.ticker || '').toString()
-    const bv = (b.name || b.ticker || '').toString()
-    return bv.localeCompare(av)
-  })
-  return out
+  if(key === 'oldest') return out.sort((a,b)=> getClosedRecentTs(a) - getClosedRecentTs(b))
+  if(key === 'name_az'){
+    return out.sort((a,b)=> String(a.name || a.ticker || '').localeCompare(String(b.name || b.ticker || '')))
+  }
+  if(key === 'price_desc'){
+    return out.sort((a,b)=> (Number(b.buy_price ?? b.close_price) || 0) - (Number(a.buy_price ?? a.close_price) || 0))
+  }
+  if(key === 'price_asc'){
+    return out.sort((a,b)=> (Number(a.buy_price ?? a.close_price) || 0) - (Number(b.buy_price ?? b.close_price) || 0))
+  }
+  if(key === 'confidence_desc'){
+    return out.sort((a,b)=> (Number(b.confidence_score) || 0) - (Number(a.confidence_score) || 0))
+  }
+  if(key === 'profit_asc') return out.sort((a,b)=> getClosedProfit(a) - getClosedProfit(b))
+  if(key === 'profit_desc') return out.sort((a,b)=> getClosedProfit(b) - getClosedProfit(a))
+  if(key === 'pos_asc') return out.sort((a,b)=> getClosedPositionSize(a) - getClosedPositionSize(b))
+  if(key === 'pos_desc') return out.sort((a,b)=> getClosedPositionSize(b) - getClosedPositionSize(a))
+  return out.sort((a,b)=> getClosedRecentTs(b) - getClosedRecentTs(a))
 }
 
 function renderClosedTrades(){
@@ -422,7 +606,7 @@ function renderClosedTrades(){
   const summaryEl = document.getElementById('closedSummary')
   if(!listEl) return
   const q = document.getElementById('closedSearch') ? document.getElementById('closedSearch').value : ''
-  const sortKey = document.getElementById('closedSort') ? document.getElementById('closedSort').value : 'profit_desc'
+  const sortKey = document.getElementById('closedSort') ? document.getElementById('closedSort').value : 'newest'
   const filtered = applyClosedFilter(closedTrades, q)
   const sorted = sortClosedTrades(filtered, sortKey)
   listEl.innerHTML = ''
@@ -720,10 +904,23 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const q = search ? search.value : ''
     const tag = tagFilter ? tagFilter.value : ''
     const sortKey = sortSignalsSelect ? sortSignalsSelect.value : 'newest'
+    const summaryEl = document.getElementById('signalsSummary')
     container.innerHTML = ''
     const list = sortSignals(applyFilter(stocks, q, tag), sortKey)
+    const totalPosition = list.reduce((sum, s)=>{
+      const shares = Number(s?.buy_amount)
+      const price = Number(s?.buy_price)
+      if(!Number.isFinite(shares) || !Number.isFinite(price)) return sum
+      return sum + (shares * price)
+    }, 0)
+    if(summaryEl){
+      summaryEl.textContent = list.length
+        ? `Total entry positions: ${formatUsdFixed(totalPosition)} (${list.length} signals)`
+        : ''
+    }
+    renderSignalsSidebar(list, totalPosition)
     if(list.length===0){ container.innerHTML = '<div class="small" style="padding:12px;color:var(--muted)">No signals found</div>'; return }
-    for(const s of list){ container.appendChild(renderStockCard(s)) }
+    for(const s of list){ container.appendChild(renderStockCard(s, totalPosition)) }
   }
   if(neonToggle){
     neonToggle.setAttribute('aria-pressed', String(document.documentElement.classList.contains('neon')))
@@ -861,27 +1058,27 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const variants = [
       [
         'AI Overview: About Loki Clarke',
-        'He blends fundamentals, technicals, and news context to identify high‑probability swing setups and time entries.',
+        'He blends fundamentals, technicals, and news context to identify high‑probability swing setups and time entries. He tends to trade medium- and large-cap stocks.',
         "Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has won the past five consecutive times, racking in a total profit of over $700,000 USD. While he keeps his exact strategy private, he has shared that his decisions are guided by fundamentals and technicals."
       ],
       [
         'AI Overview: About Loki Clarke',
-        'His process combines fundamental strength, technical structure, and news catalysts to time swing trades.',
+        'His process combines fundamental strength, technical structure, and news catalysts to time swing trades. He tends to trade medium- and large-cap stocks.',
         "Loki Clarke is a Queen's College Barbados student and the sole winner of the virtual stock market game. He has taken the past five straight titles, building over $700,000 USD in total profit. He keeps the exact playbook private, but says fundamentals and technicals guide every trade."
       ],
       [
         'AI Overview: About Loki Clarke',
-        'He weighs fundamentals, technicals, and news momentum to rank setups and pick entries.',
+        'He weighs fundamentals, technicals, and news momentum to rank setups and pick entries. He tends to trade medium- and large-cap stocks.',
         "Loki Clarke, a student at Queen's College Barbados, is the sole winner of the virtual stock market game. He has won five consecutive times, racking in over $700,000 USD in total profit. His exact strategy stays private, though he notes that fundamentals and technicals steer his decisions."
       ],
       [
         'AI Overview: About Loki Clarke',
-        'The method merges fundamentals, technical patterns, and news flow to spot high‑probability swings.',
+        'The method merges fundamentals, technical patterns, and news flow to spot high‑probability swings. He tends to trade medium- and large-cap stocks.',
         "Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has captured five straight wins, totaling over $700,000 USD in profit. He keeps the details quiet but says fundamentals and technicals are his compass."
       ],
       [
         'AI Overview: About Loki Clarke',
-        'He focuses on fundamentals and technicals, with news context as a timing filter for swing trades.',
+        'He focuses on fundamentals and technicals, with news context as a timing filter for swing trades. He tends to trade medium- and large-cap stocks.',
         "Loki Clarke is a Queen's College Barbados student and the sole winner of the virtual stock market game. He has won the past five in a row, racking in over $700,000 USD total profit. While his precise strategy is private, he cites fundamentals and technicals as the guide."
       ]
     ]

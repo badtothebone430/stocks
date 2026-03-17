@@ -178,7 +178,29 @@
       /* when light mode is active, fade to the light layer */
       .light body::before{ opacity:0 }
       .light body::after{ opacity:1 }
-      .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:20px}
+      .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:20px}
+      .signals-layout{display:flex;gap:16px;align-items:flex-start}
+      .signals-main{flex:1;min-width:0}
+      .signals-sidebar{width:300px;position:sticky;top:64px}
+      .side-card{background:linear-gradient(180deg,var(--card),var(--card-end));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.06)}
+      .signals-sidebar .side-card + .side-card{margin-top:10px}
+      .side-title{font-weight:700}
+      .side-legend{margin-top:10px;display:grid;gap:8px}
+      .legend-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .legend-left{display:flex;align-items:center;gap:8px;min-width:0}
+      .legend-dot{width:10px;height:10px;border-radius:50%}
+      .legend-name{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .legend-value{font-size:12px;color:var(--text)}
+      .legend-bar{height:6px;border-radius:999px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:6px}
+      .legend-bar > div{height:100%;border-radius:999px}
+      .side-stats{margin-top:10px;display:grid;gap:8px}
+      .stat-row{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+      .stat-row .k{color:var(--muted)}
+      .stat-row .v{color:var(--text);font-weight:600}
+      @media (min-width:821px){
+        /* pull the sidebar up to better align with the top controls row */
+        .signals-sidebar{margin-top:-78px}
+      }
       .card{background:linear-gradient(180deg,var(--card),var(--card-end));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 20px rgba(0,0,0,0.06);transition:transform .12s,box-shadow .12s}
       .card{cursor:pointer}
       .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.12)}
@@ -200,7 +222,9 @@
         .controls input[type="search"], .controls select, .controls .theme-toggle{width:100%}
         .controls .theme-toggle{justify-content:center}
         .tabs{flex-wrap:wrap}
-        .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+        .grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+        .signals-layout{flex-direction:column}
+        .signals-sidebar{width:100%;position:static}
         .closed-item{flex-direction:column;align-items:flex-start}
       }
       @media (max-width:520px){
@@ -209,7 +233,7 @@
         #search,#tagFilter,#sortSignals{grid-column:1/-1}
         .controls input[type="search"], .controls select{width:100%}
         .controls .theme-toggle{width:100%}
-        .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+        .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
         .modal-card{width:95%}
         #detailContent > div{grid-template-columns:1fr}
         .gauge{flex-direction:column;align-items:flex-start}
@@ -250,6 +274,8 @@
             <option value="price_desc">Price (High-Low)</option>
             <option value="price_asc">Price (Low-High)</option>
             <option value="confidence_desc">Confidence (High-Low)</option>
+            <option value="pos_desc">Position Size (Biggest)</option>
+            <option value="pos_asc">Position Size (Smallest)</option>
           </select>
           <button id="neonToggle" class="theme-toggle" title="Toggle neon mode" aria-pressed="false">
             <span class="icon" aria-hidden="true">✦</span>
@@ -271,7 +297,23 @@
           <button class="tab" data-tab="confidence" role="tab" aria-selected="false">Confidence Score™</button>
         </div>
         <section id="tab-signals" class="tab-panel active" role="tabpanel">
-          <div id="stocks" class="grid"></div>
+          <div class="signals-layout">
+            <div class="signals-main">
+              <div id="signalsSummary" class="small" style="margin:10px 0;color:var(--muted)"></div>
+              <div id="stocks" class="grid"></div>
+            </div>
+            <aside id="signalsSidebar" class="signals-sidebar" aria-label="Positions sidebar">
+              <div class="side-card">
+                <div class="side-title">Position Sizes</div>
+                <canvas id="posPie" width="220" height="220" style="width:100%;max-width:220px;height:auto;margin-top:8px"></canvas>
+                <div id="posLegend" class="side-legend"></div>
+              </div>
+              <div class="side-card">
+                <div class="side-title">Stats</div>
+                <div id="posStats" class="side-stats"></div>
+              </div>
+            </aside>
+          </div>
         </section>
         <section id="tab-achievements" class="tab-panel" role="tabpanel">
           <div class="achievements">
@@ -285,7 +327,7 @@
             <div class="ach-summary" id="achSummary"></div>
             <details class="ach-bio" open>
               <summary>About Loki Clarke</summary>
-              <div class="bio-text" id="achBioText" data-full-text="AI Overview: About Loki Clarke||His approach blends fundamentals, technicals, and news context to identify high‑probability swing setups and time entries.||Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has won the past five consecutive times, racking in a total profit of over $700,000 USD. While he keeps his exact strategy private, he has shared that his decisions are guided by fundamentals and technicals.">
+              <div class="bio-text" id="achBioText" data-full-text="AI Overview: About Loki Clarke||His approach blends fundamentals, technicals, and news context to identify high‑probability swing setups and time entries. He tends to trade medium- and large-cap stocks.||Loki Clarke is a student at Queen's College Barbados and the sole winner of the virtual stock market game. He has won the past five consecutive times, racking in a total profit of over $700,000 USD. While he keeps his exact strategy private, he has shared that his decisions are guided by fundamentals and technicals.">
                 <div class="bio-dots" id="achBioDots">Thinking...</div>
                 <div id="achBioType"></div>
               </div>
@@ -304,11 +346,17 @@
         <section id="tab-closed" class="tab-panel" role="tabpanel">
           <div class="closed-controls">
             <input id="closedSearch" type="search" placeholder="Search closed trades" aria-label="Search closed trades" />
-            <select id="closedSort" style="background:var(--card);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:8px">
-              <option value="profit_desc">Profit (High to Low)</option>
-              <option value="profit_asc">Profit (Low to High)</option>
-              <option value="value_az">Value (A-Z)</option>
-              <option value="value_za">Value (Z-A)</option>
+            <select id="closedSort" class="sort-select" aria-label="Sort closed trades">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="name_az">Name (A-Z)</option>
+              <option value="price_desc">Price (High-Low)</option>
+              <option value="price_asc">Price (Low-High)</option>
+              <option value="confidence_desc">Confidence (High-Low)</option>
+              <option value="profit_desc">Highest Profit</option>
+              <option value="profit_asc">Lowest Profit</option>
+              <option value="pos_desc">Position Size (Biggest)</option>
+              <option value="pos_asc">Position Size (Smallest)</option>
             </select>
             <button id="closedViewToggle" class="view-toggle" title="Toggle $ / % view" aria-pressed="false">
               <span class="icon usd">$</span>
