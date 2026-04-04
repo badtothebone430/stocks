@@ -25,6 +25,17 @@ Notes:
 - The `signals.json` file is the single source of truth for the UI.
 - `add_stock.py` is a minimal helper for local editing; it's included in `.gitignore` by default.
 
+## Payments (NEON / paid app preview)
+
+The `/neon` version uses a simple UI gate flag (`localStorage.neon_entitled`) for now. All checkout happens on `/pricing` using Paddle.js overlay checkout.
+
+Setup:
+
+1. Update `paddle_config.js` with your Paddle **client-side token** and the 3 **price IDs** (`pri_...`).
+2. In Paddle, approve your default payment link domain and ensure `/pricing` is on that domain.
+
+Important: this is UI gating for a static site. If you need a “real” paywall, the next step is to persist entitlements (via Paddle webhooks) in a DB/KV store and check them server-side.
+
 Browser editor:
 - Use the **Add Signal** button to open the in-browser form and create a new signal.
 - Click any card to edit or delete an existing signal.

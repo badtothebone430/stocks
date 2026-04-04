@@ -1,5 +1,6 @@
 add_stock.py
 index_admin.html
+node_modules/
 
 # Local Netlify folder
 .netlify

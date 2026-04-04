@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Privacy Policy — NEON</title>
+    <link rel="icon" href="icon.png" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root{--bg:#090909;--text:#eee;--muted:#9a9a9a;--card:#0f0f0f;--card2:#0b0b0b}
+      html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial;color:var(--text);background:linear-gradient(180deg,#090909,#050505);}
+      .wrap{max-width:980px;margin:34px auto;padding:22px}
+      .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+      .btn{border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.03);color:var(--text);padding:9px 12px;border-radius:12px;text-decoration:none;font-weight:700}
+      .card{margin-top:14px;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px}
+      h1{margin:0;font-size:20px}
+      h2{margin:18px 0 8px 0;font-size:14px}
+      p,li{color:var(--muted);font-size:13px;line-height:1.65}
+      ul{margin:8px 0 0 18px}
+      footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+      footer a{color:inherit}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Privacy Policy</h1>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px">Last updated: <span id="lastUpdated"></span></div>
+        </div>
+        <a class="btn" href="/">Back to home</a>
+      </div>
+
+      <div class="card">
+        <h2>What we collect</h2>
+        <ul>
+          <li>Basic usage data (e.g., page views) to improve the product.</li>
+          <li>Payment-related identifiers handled by our payment provider (we do not store full card details).</li>
+        </ul>
+
+        <h2>How we use it</h2>
+        <p>We use data to operate the service, provide support, prevent abuse/fraud, and improve features.</p>
+
+        <h2>Sharing</h2>
+        <p>We may share limited data with service providers (hosting, analytics, payments) only as needed to run the service.</p>
+
+        <h2>Retention</h2>
+        <p>We retain data only as long as needed for the purposes above, unless a longer period is required by law.</p>
+
+        <h2>Your choices</h2>
+        <p>You can request access, correction, or deletion of your data by contacting us.</p>
+
+        <h2>Contact</h2>
+        <p>Contact: <span id="contactEmail">support@lokiclarke.com</span></p>
+      </div>
+
+      <footer>
+        <a href="/terms">Terms</a> • <a href="/refunds">Refunds</a> • <a href="/pricing">Pricing</a>
+      </footer>
+    </div>
+    <script>
+      document.getElementById('lastUpdated').textContent = new Date().toISOString().slice(0,10);
+    </script>
+  </body>
+</html>

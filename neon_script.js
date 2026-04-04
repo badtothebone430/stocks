@@ -62,6 +62,7 @@ function openPromoModal({ force = false } = {}){
   if(!promoWired){
     const promoClose = document.getElementById('promoClose')
     const promoDontShow = document.getElementById('promoDontShow')
+    const promoGoPricing = document.getElementById('promoGoPricing')
     if(promoDontShow){
       promoDontShow.addEventListener('change', ()=>{
         if(promoDontShow.checked) localStorage.setItem(promoDismissKey, '1')
@@ -72,6 +73,11 @@ function openPromoModal({ force = false } = {}){
     promoModal.addEventListener('click', (e)=>{
       if(e.target === promoModal) closePromoModal()
     })
+    if(promoGoPricing){
+      promoGoPricing.addEventListener('click', ()=>{
+        localStorage.setItem(promoKey, String(Date.now()))
+      })
+    }
     promoWired = true
   }
 

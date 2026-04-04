@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Terms of Service — NEON</title>
+    <link rel="icon" href="icon.png" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root{--bg:#090909;--text:#eee;--muted:#9a9a9a;--card:#0f0f0f;--card2:#0b0b0b}
+      html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial;color:var(--text);background:linear-gradient(180deg,#090909,#050505);}
+      .wrap{max-width:980px;margin:34px auto;padding:22px}
+      .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+      .btn{border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.03);color:var(--text);padding:9px 12px;border-radius:12px;text-decoration:none;font-weight:700}
+      .card{margin-top:14px;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px}
+      h1{margin:0;font-size:20px}
+      h2{margin:18px 0 8px 0;font-size:14px}
+      p,li{color:var(--muted);font-size:13px;line-height:1.65}
+      ul{margin:8px 0 0 18px}
+      footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+      footer a{color:inherit}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Terms of Service</h1>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px">Last updated: <span id="lastUpdated"></span></div>
+        </div>
+        <a class="btn" href="/">Back to home</a>
+      </div>
+
+      <div class="card">
+        <h2>1) Service</h2>
+        <p>NEON provides market data, watchlists, signals, analytics, and related content for informational and educational purposes.</p>
+
+        <h2>2) No financial advice</h2>
+        <p>We are not a broker-dealer, investment adviser, or financial institution. Content is not personalized financial advice. You are responsible for your own decisions.</p>
+
+        <h2>3) Accounts and access</h2>
+        <p>Paid access may be required for certain features. Access may be suspended for abuse, fraud, or violation of these terms.</p>
+
+        <h2>4) Payments</h2>
+        <ul>
+          <li>Subscriptions renew automatically unless cancelled.</li>
+          <li>Lifetime access is a one-time purchase for continued access to NEON features.</li>
+          <li>Taxes may apply depending on your location.</li>
+        </ul>
+
+        <h2>5) Acceptable use</h2>
+        <p>You agree not to scrape, reverse engineer, or disrupt the service, and not to use the service for illegal purposes.</p>
+
+        <h2>6) Disclaimers and limitation of liability</h2>
+        <p>THE SERVICE IS PROVIDED “AS IS” WITHOUT WARRANTIES. TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE ARE NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES.</p>
+
+        <h2>7) Changes</h2>
+        <p>We may update these terms from time to time. Continued use of the service after changes means you accept the updated terms.</p>
+
+        <h2>8) Contact</h2>
+        <p>Contact: <span id="contactEmail">support@lokiclarke.com</span></p>
+      </div>
+
+      <footer>
+        <a href="/privacy">Privacy Policy</a> • <a href="/refunds">Refund Policy</a> • <a href="/pricing">Pricing</a>
+      </footer>
+    </div>
+    <script>
+      document.getElementById('lastUpdated').textContent = new Date().toISOString().slice(0,10);
+    </script>
+  </body>
+</html>
