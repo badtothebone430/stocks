@@ -4,6 +4,230 @@ const CLOSED_TRADES_URL = './closed_trades.json'
 // global stocks array so top-level functions like `openDetail` can access it
 let stocks = []
 let closedTrades = []
+let currentDetailSignal = null
+
+const SIZING_CAPITAL_KEY = 'sizing_capital_usd'
+
+const LOGO_CACHE_KEY = 'ticker_logo_cache_v1'
+const logoCache = (() => {
+  try { return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {} } catch { return {} }
+})()
+
+function saveLogoCache(){
+  try { localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(logoCache)) } catch {}
+}
+
+function getInitials(ticker, name){
+  const t = (ticker || '').toString().trim().toUpperCase()
+  if(t) return t.slice(0, 4)
+  const n = (name || '').toString().trim()
+  if(!n) return '?'
+  const parts = n.split(/\s+/).filter(Boolean).slice(0,2)
+  return parts.map(p=>p[0].toUpperCase()).join('')
+}
+
+function getCachedLogoUrl(ticker){
+  const key = (ticker || '').toString().trim().toUpperCase()
+  if(!key) return null
+  const entry = logoCache[key]
+  if(!entry || !entry.url) return null
+  if(entry.expiresAt && Date.now() > entry.expiresAt) return null
+  return entry.url
+}
+
+async function fetchAndCacheLogoUrl(ticker){
+  const key = (ticker || '').toString().trim().toUpperCase()
+  if(!key) return null
+  // avoid refetching too often even if missing
+  const existing = logoCache[key]
+  if(existing && existing.checkedAt && (Date.now() - existing.checkedAt) < 6 * 60 * 60 * 1000){
+    return existing.url || null
+  }
+  try{
+    const res = await fetch(`/.netlify/functions/finnhub-profile?symbol=${encodeURIComponent(key)}`, { cache:'no-store' })
+    if(!res.ok) throw new Error('logo fetch failed')
+    const data = await res.json()
+    const url = data && data.logo ? String(data.logo) : ''
+    logoCache[key] = {
+      url: url || null,
+      checkedAt: Date.now(),
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    }
+    saveLogoCache()
+    return url || null
+  }catch{
+    logoCache[key] = { url: null, checkedAt: Date.now(), expiresAt: Date.now() + 6 * 60 * 60 * 1000 }
+    saveLogoCache()
+    return null
+  }
+}
+
+function attachTickerIcon(cardEl, ticker, name){
+  const host = cardEl && cardEl.querySelector ? cardEl.querySelector('[data-ticker-icon]') : null
+  if(!host) return
+  const sym = (ticker || '').toString().trim().toUpperCase()
+  const initials = getInitials(sym, name)
+  host.innerHTML = `<span class="fallback">${escapeHtml(initials)}</span>`
+
+  const cached = getCachedLogoUrl(sym)
+  const setImg = (url)=>{
+    if(!url) return
+    host.innerHTML = ''
+    const img = document.createElement('img')
+    img.alt = sym ? `${sym} logo` : 'logo'
+    img.loading = 'lazy'
+    img.decoding = 'async'
+    img.referrerPolicy = 'no-referrer'
+    img.src = url
+    img.onerror = ()=>{ host.innerHTML = `<span class="fallback">${escapeHtml(initials)}</span>` }
+    host.appendChild(img)
+  }
+
+  if(cached) setImg(cached)
+  else {
+    fetchAndCacheLogoUrl(sym).then(setImg)
+  }
+}
+
+function parsePercent(v){
+  if(v == null) return null
+  if(typeof v === 'number' && Number.isFinite(v)) return v
+  const s = String(v).trim().replace('%','')
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+}
+
+function formatUsd(v){
+  if(typeof v !== 'number' || !Number.isFinite(v)) return '-'
+  return '$' + v.toFixed(2)
+}
+
+function clamp01(n){ return Math.max(0, Math.min(1, n)) }
+
+function confidenceToWinProb(score){
+  const s = clamp(Number(score||0), 0, 100)
+  return clamp01(s / 100)
+}
+
+function computeKellyFraction({ winProb, payoffRatio }){
+  const p = typeof winProb === 'number' ? winProb : 0
+  const b = typeof payoffRatio === 'number' ? payoffRatio : 0
+  if(!Number.isFinite(p) || !Number.isFinite(b) || b <= 0) return 0
+  const f = p - (1 - p) / b
+  return Math.max(0, f)
+}
+
+function openSizingModal(signal){
+  const modal = document.getElementById('sizingModal')
+  if(!modal) return
+  currentDetailSignal = signal || currentDetailSignal
+  if(!currentDetailSignal) return
+
+  const titleEl = document.getElementById('sizingTitle')
+  if(titleEl) titleEl.textContent = `Size ${currentDetailSignal.ticker || ''}`.trim()
+
+  const capEl = document.getElementById('sizingCapital')
+  const riskEl = document.getElementById('sizingRisk')
+  if(capEl){
+    const saved = localStorage.getItem(SIZING_CAPITAL_KEY)
+    if(saved && !capEl.value) capEl.value = saved
+  }
+
+  const recalc = ()=> renderSizing(currentDetailSignal)
+  if(capEl){
+    capEl.oninput = ()=>{
+      localStorage.setItem(SIZING_CAPITAL_KEY, String(capEl.value || ''))
+      recalc()
+    }
+  }
+  if(riskEl) riskEl.onchange = recalc
+
+  modal.style.display = 'flex'
+  requestAnimationFrame(()=> modal.classList.add('show'))
+  document.body.classList.add('modal-open')
+  renderSizing(currentDetailSignal)
+}
+
+function closeSizingModal(){
+  const modal = document.getElementById('sizingModal')
+  if(!modal) return
+  modal.classList.remove('show')
+  modal.style.display = 'none'
+  document.body.classList.remove('modal-open')
+}
+
+function renderSizing(signal){
+  const capEl = document.getElementById('sizingCapital')
+  const riskEl = document.getElementById('sizingRisk')
+  const outPos = document.getElementById('sz_position')
+  const outShares = document.getElementById('sz_shares')
+  const outMaxLoss = document.getElementById('sz_max_loss')
+  const outExp = document.getElementById('sz_expected_profit')
+  const outMeta = document.getElementById('sz_meta')
+  if(!signal || !capEl || !riskEl) return
+
+  const capital = Number(String(capEl.value||'').replace(/,/g,''))
+  const rewardPct = parsePercent(signal.expected_profit)
+  const riskPct = parsePercent(signal.max_risk)
+  const price = Number(signal.buy_price)
+  let score = Number(signal.confidence_score)
+  if(!Number.isFinite(score)){
+    const confEl = document.getElementById('d_confidence')
+    const m = confEl && confEl.textContent ? String(confEl.textContent).match(/(\d+(\.\d+)?)/) : null
+    score = m ? Number(m[1]) : NaN
+  }
+
+  if(!Number.isFinite(capital) || capital <= 0){
+    if(outMeta) outMeta.textContent = 'Enter your trading capital to see a recommendation.'
+    if(outPos) outPos.textContent = '-'
+    if(outShares) outShares.textContent = '-'
+    if(outMaxLoss) outMaxLoss.textContent = '-'
+    if(outExp) outExp.textContent = '-'
+    return
+  }
+
+  if(!Number.isFinite(rewardPct) || !Number.isFinite(riskPct) || rewardPct <= 0 || riskPct <= 0){
+    if(outMeta) outMeta.textContent = 'This signal is missing expected profit % or max risk %.'
+    if(outPos) outPos.textContent = '-'
+    if(outShares) outShares.textContent = '-'
+    if(outMaxLoss) outMaxLoss.textContent = '-'
+    if(outExp) outExp.textContent = '-'
+    return
+  }
+
+  if(!Number.isFinite(score)){
+    if(outMeta) outMeta.textContent = 'This signal is missing a Confidence Score™.'
+    if(outPos) outPos.textContent = '-'
+    if(outShares) outShares.textContent = '-'
+    if(outMaxLoss) outMaxLoss.textContent = '-'
+    if(outExp) outExp.textContent = '-'
+    return
+  }
+
+  const p = confidenceToWinProb(score)
+  const b = rewardPct / riskPct
+  const fullKelly = computeKellyFraction({ winProb: p, payoffRatio: b })
+  const mult = Number(riskEl.value || '0.5')
+  const kelly = fullKelly * (Number.isFinite(mult) ? mult : 0.5)
+
+  const capped = Math.min(kelly, 0.25)
+  const wasCapped = kelly > capped + 1e-9
+
+  const positionUsd = capital * capped
+  const maxLossUsd = positionUsd * (riskPct / 100)
+  const expectedProfitUsd = positionUsd * (rewardPct / 100)
+  const shares = (Number.isFinite(price) && price > 0) ? (positionUsd / price) : null
+
+  if(outPos) outPos.textContent = `${formatUsd(positionUsd)} (${(capped*100).toFixed(1)}% of capital)`
+  if(outShares) outShares.textContent = (shares != null && Number.isFinite(shares)) ? shares.toFixed(2) : '-'
+  if(outMaxLoss) outMaxLoss.textContent = formatUsd(maxLossUsd)
+  if(outExp) outExp.textContent = formatUsd(expectedProfitUsd)
+  if(outMeta){
+    outMeta.textContent =
+      `Inputs: win prob ≈ ${(p*100).toFixed(1)}% (from Confidence Score), payoff ratio ≈ ${b.toFixed(2)}. ` +
+      `Full Kelly ≈ ${(fullKelly*100).toFixed(1)}%, selected ≈ ${(kelly*100).toFixed(1)}%${wasCapped ? ' (capped at 25%).' : '.'}`
+  }
+}
 const ACHIEVEMENTS = [
   { cycle: 'Cycle 1', total: 83000, profit: 61000 },
   { cycle: 'Cycle 2', total: 166600, profit: 141600 },
@@ -220,8 +444,13 @@ function renderStockCard(s, totalPosition){
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div>
-        <div class="ticker">${escapeHtml(s.ticker)} <span class="small">${escapeHtml(s.exchange||'')}</span></div>
-        <div class="name">${escapeHtml(s.name||'')}</div>
+        <div class="ticker-row">
+          <div class="ticker-icon" data-ticker-icon></div>
+          <div>
+            <div class="ticker">${escapeHtml(s.ticker)} <span class="small">${escapeHtml(s.exchange||'')}</span></div>
+            <div class="name">${escapeHtml(s.name||'')}</div>
+          </div>
+        </div>
       </div>
       <div class="confidence" aria-label="Confidence score">
         <div class="confidence-label">Confidence™</div>
@@ -236,6 +465,7 @@ function renderStockCard(s, totalPosition){
       <div class="small">${formatNotesHtml(s.notes||'')}</div>
     </div>
   `
+  attachTickerIcon(el, s.ticker, s.name)
   // open detail on click / enter
   el.addEventListener('click', ()=> openDetail(s))
   el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(s) } })
@@ -776,6 +1006,18 @@ async function openDetail(stockOrTicker, source='signals'){
   setHtml('d_notes', s.notes || '')
   renderConfidenceGauge(s.confidence_score)
   renderPriceLine(s, profitText, null)
+
+  currentDetailSignal = s
+  const sizeBtn = document.getElementById('sizeTradeBtn')
+  if(sizeBtn){
+    sizeBtn.disabled = false
+    sizeBtn.title = 'Open position sizing'
+    sizeBtn.onclick = (e)=>{
+      e.preventDefault()
+      e.stopPropagation()
+      openSizingModal(s)
+    }
+  }
 }
 
 function renderConfidenceGauge(score){
@@ -958,6 +1200,24 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(e.target===modalRoot){
       modalRoot.classList.remove('show')
       setTimeout(()=>{ modalRoot.style.display='none' }, 260)
+    }
+  })
+
+  // sizing modal
+  const sizingRoot = document.getElementById('sizingModal')
+  const sizingClose = document.getElementById('sizingClose')
+  if(sizingClose) sizingClose.addEventListener('click', closeSizingModal)
+  if(sizingRoot) sizingRoot.addEventListener('click', (e)=>{
+    if(e.target===sizingRoot) closeSizingModal()
+  })
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      closeSizingModal()
+      if(modalRoot){
+        modalRoot.classList.remove('show')
+        setTimeout(()=>{ modalRoot.style.display='none' }, 260)
+      }
     }
   })
 

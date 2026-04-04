@@ -8,7 +8,8 @@
     <link rel="apple-touch-icon" href="icon.png" />
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#090909" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
       :root{
         --bg-dark:#090909; --bg-dark-end:#050505; --bg-light:#f6f7fb; --bg-light-end:#f6f7fb;
@@ -22,16 +23,24 @@
         --profit-pos:#1f8b4c; --profit-neg:#e11d48;
         color-scheme: light;
       }
-      html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial;color:var(--text,#eee);background:none;}
+      html,body{height:100%;margin:0;font-family:'Space Grotesk',sans-serif;color:var(--text,#eee);background:none;}
+      button,input,select,textarea{font:inherit}
+      option{font:inherit}
       body{display:flex;min-height:100vh}
       .wrap{flex:1;display:flex;flex-direction:column}
       main{flex:1}
       body{color:var(--text,#eee)}
-      .wrap{max-width:1100px;margin:36px auto;padding:24px}
+      .wrap{max-width:1100px;margin:0 auto;padding:28px 24px 28px}
       header{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
       .header-top{display:flex;align-items:center;gap:12px}
       .brand{display:flex;align-items:center;gap:12px}
       .logo{width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
+      .ticker-row{display:flex;align-items:center;gap:10px}
+      .ticker-icon{width:28px;height:28px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.03);flex:0 0 auto}
+      .ticker-icon img{width:100%;height:100%;object-fit:cover;display:block}
+      .ticker-icon .fallback{font-weight:900;font-size:12px;letter-spacing:0.3px;color:rgba(255,255,255,0.85)}
+      :root.light .ticker-icon{border-color:rgba(0,0,0,0.10);background:rgba(0,0,0,0.03)}
+      :root.light .ticker-icon .fallback{color:rgba(17,24,39,0.85)}
       h1{font-weight:600;margin:0;font-size:20px}
       .sub{color:var(--muted);font-size:13px}
       .controls{display:flex;gap:12px;align-items:center}
@@ -256,6 +265,26 @@
       canvas.sparkline{display:block;margin-left:auto;width:80px;height:28px}
       .skeleton{background:linear-gradient(90deg,var(--skeleton-start),var(--skeleton-mid),var(--skeleton-start));height:88px;border-radius:12px}
       footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
+      footer a{color:inherit;text-decoration:none}
+      footer a:hover{text-decoration:underline}
+      .footer-links{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:10px}
+      #footer-year .footer-links{display:flex}
+      .footer-links a{padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.03);text-decoration:none;transition:transform 180ms ease, border-color 180ms ease}
+      .footer-links a:hover{transform:translateY(-1px);border-color:rgba(0,209,255,0.35);text-decoration:none}
+      :root.light .footer-links a{border-color:rgba(0,0,0,0.08);background:rgba(0,0,0,0.03)}
+
+      /* Smooth motion */
+      @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      header{animation:fadeUp 520ms ease both}
+      .tabs{animation:fadeUp 520ms ease 60ms both}
+      .tab{transition:transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease}
+      .tab:hover{transform:translateY(-1px)}
+      .tab:active{transform:translateY(0px) scale(0.99)}
+      .card,.closed-item,.model-item,.ach-item,.side-card{animation:fadeUp 420ms ease both}
+      @media (prefers-reduced-motion: reduce){
+        header,.tabs,.card,.closed-item,.model-item,.ach-item,.side-card{animation:none !important}
+        .tab,.footer-links a{transition:none !important}
+      }
       button, .tab, .theme-toggle, .view-toggle, .promo-close, .price-marker, .card, .closed-item { cursor:pointer }
       @media (max-width:820px){
         header{gap:12px}
@@ -443,7 +472,7 @@
         </section>
       </main>
 
-      <footer id="footer-year">© <span id="current-year"></span> Loki Clarke — This page is updated regularly.<br>Disclaimer: This site is for informational purposes only and does not constitute financial or investment advice. Always do your own research before making investment decisions.<br><a href="/pricing">Pricing</a> • <a href="/terms">Terms</a> • <a href="/privacy">Privacy</a> • <a href="/refunds">Refunds</a></footer>
+      <footer id="footer-year"><div>© <span id="current-year"></span> Loki Clarke — This page is updated regularly.</div><div style="margin-top:6px;font-size:12px">Disclaimer: This site is for informational purposes only and does not constitute financial or investment advice. Always do your own research before making investment decisions.</div><div class="footer-links"><a href="/pricing">Pricing</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds">Refunds</a></div></footer>
     </div>
     <script src="local_config.js"></script>
     <script>
@@ -556,6 +585,9 @@
                 </div>
               </div>
               <div class="small upgrade-hint" style="margin-top:10px;color:var(--muted)">Upgrade to unlock on-signal confidence + sizing</div>
+              <div class="detail-cta-row">
+                <button id="sizeTradeBtn" class="detail-cta" type="button">Size this trade</button>
+              </div>
             </div>
           </div>
           <div class="detail-divider"></div>
@@ -629,8 +661,81 @@
           .detail-panel .detail-bottom{margin-top:0}
           .detail-label{font-size:11px;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:800}
           .detail-value{margin-top:4px;font-size:13px;color:var(--text)}
+          .detail-cta-row{display:flex;gap:10px;margin-top:10px}
+          .detail-cta{width:100%;border:1px solid rgba(0,209,255,0.30);background:linear-gradient(90deg, rgba(0,209,255,0.18), rgba(64,156,255,0.10));color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:900;transition:transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease}
+          .detail-cta:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,0,0,0.45);border-color:rgba(0,209,255,0.55)}
+          .detail-cta:active{transform:translateY(0px) scale(0.99)}
+          .detail-cta:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
           @media (max-width:720px){
             .detail-top{grid-template-columns:1fr}
+          }
+        </style>
+      </div>
+    </div>
+
+    <!-- Position sizing modal (NEON only) -->
+    <div id="sizingModal" class="modal" style="display:none;position:fixed;inset:0;backdrop-filter:blur(2px);background:rgba(0,0,0,0.6);align-items:center;justify-content:center">
+      <div class="modal-card" style="background:var(--card);padding:18px;border-radius:14px;max-width:720px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+        <div class="detail-head">
+          <div>
+            <div class="detail-kicker">Position sizing</div>
+            <div id="sizingTitle" class="detail-title">Size this trade</div>
+          </div>
+          <button id="sizingClose" class="detail-close" aria-label="Close">✕</button>
+        </div>
+        <div id="sizingContent" style="margin-top:12px">
+          <div class="sizing-grid">
+            <div class="sizing-card">
+              <div class="detail-section-title">Inputs</div>
+              <div class="sizing-fields">
+                <label class="sizing-field">
+                  <div class="detail-label">Trading capital (USD)</div>
+                  <input id="sizingCapital" inputmode="decimal" placeholder="10000" />
+                </label>
+                <label class="sizing-field">
+                  <div class="detail-label">Risk profile</div>
+                  <select id="sizingRisk">
+                    <option value="1">High risk (Full Kelly)</option>
+                    <option value="0.5" selected>Medium risk (Half Kelly)</option>
+                    <option value="0.25">Low risk (Quarter Kelly)</option>
+                    <option value="0.1">Very low risk (Tenth Kelly)</option>
+                  </select>
+                </label>
+                <div class="small" style="margin-top:6px;color:var(--muted)">Sizing uses expected profit %, max risk %, and Confidence Score™. This is an estimate, not financial advice.</div>
+              </div>
+            </div>
+
+            <div class="sizing-card">
+              <div class="detail-section-title">Recommendation</div>
+              <div class="detail-chips" style="margin-top:10px">
+                <div class="detail-chip">
+                  <div class="detail-chip-k">Position size</div>
+                  <div id="sz_position" class="detail-chip-v">-</div>
+                </div>
+                <div class="detail-chip">
+                  <div class="detail-chip-k">Est. shares</div>
+                  <div id="sz_shares" class="detail-chip-v">-</div>
+                </div>
+                <div class="detail-chip">
+                  <div class="detail-chip-k">Max loss</div>
+                  <div id="sz_max_loss" class="detail-chip-v">-</div>
+                </div>
+                <div class="detail-chip">
+                  <div class="detail-chip-k">Expected profit</div>
+                  <div id="sz_expected_profit" class="detail-chip-v">-</div>
+                </div>
+              </div>
+              <div id="sz_meta" class="small" style="margin-top:10px;color:var(--muted)">-</div>
+            </div>
+          </div>
+        </div>
+        <style>
+          .sizing-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+          .sizing-card{border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.02);border-radius:14px;padding:12px}
+          .sizing-fields{margin-top:10px;display:grid;gap:10px}
+          .sizing-field input,.sizing-field select{width:100%;margin-top:6px;background:var(--card);border:1px solid rgba(255,255,255,0.10);color:inherit;padding:10px 12px;border-radius:12px}
+          @media (max-width: 720px){
+            .sizing-grid{grid-template-columns:1fr}
           }
         </style>
       </div>

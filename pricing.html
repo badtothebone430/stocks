@@ -6,15 +6,19 @@
     <title>Pricing — NEON</title>
     <link rel="icon" href="icon.png" />
     <link rel="apple-touch-icon" href="icon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="paddle_config.js"></script>
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
     <style>
       :root{
         --bg:#090909; --card:#0f0f0f; --card2:#0b0b0b; --text:#eee; --muted:#9a9a9a; --accent:#00d1ff;
       }
-      html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial;color:var(--text);background:radial-gradient(1100px 600px at 20% 10%, rgba(0,209,255,0.10), transparent 60%), linear-gradient(180deg,#090909,#050505);}
+      html{min-height:100%;background:radial-gradient(1100px 600px at 20% 10%, rgba(0,209,255,0.10), transparent 60%), linear-gradient(180deg,#090909,#050505);background-attachment:fixed}
+      body{min-height:100vh;margin:0;font-family:'Space Grotesk',sans-serif;color:var(--text);background:transparent}
       a{color:inherit}
+      button,input,select,textarea{font:inherit}
+      option{font:inherit}
       .wrap{max-width:980px;margin:34px auto;padding:22px}
       .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
       .brand{display:flex;align-items:center;gap:12px}
@@ -24,19 +28,66 @@
       .btn{border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.03);color:var(--text);padding:9px 12px;border-radius:12px;text-decoration:none;font-weight:700}
       .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
       @media (max-width: 860px){.grid{grid-template-columns:1fr}}
-      .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px}
+      .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;display:flex;flex-direction:column}
       .name{font-weight:800;font-size:15px}
+      .tag{display:inline-flex;align-items:center;gap:8px;margin-left:10px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:0.2px;color:rgba(39,174,96,1);background:rgba(39,174,96,0.12);border:1px solid rgba(39,174,96,0.35);vertical-align:middle;transform:translateY(-1px)}
+      .tag.blue{color:rgba(0,209,255,1);background:rgba(0,209,255,0.10);border-color:rgba(0,209,255,0.30)}
       .price{margin-top:10px;font-size:22px;font-weight:900}
       .small{color:var(--muted);font-size:13px;line-height:1.55;margin-top:8px}
       ul{margin:10px 0 0 18px;color:var(--muted);font-size:13px;line-height:1.55}
-      .buy{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-      .buy button{border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.04);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:900}
+      .card-footer{margin-top:auto;padding-top:14px}
+      .buy{display:flex;gap:10px;flex-wrap:wrap}
+      .buy button{border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.04);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:900;transition:transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease}
       .buy button.primary{background:linear-gradient(90deg, rgba(0,209,255,0.25), rgba(64,156,255,0.18));border-color:rgba(0,209,255,0.55)}
       .buy button:disabled{opacity:0.6;cursor:not-allowed}
+      .buy button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 14px 36px rgba(0,0,0,0.40);border-color:rgba(0,209,255,0.40)}
+      .buy button:not(:disabled):active{transform:translateY(0px) scale(0.99)}
+      .reassure{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.55}
+      .reassure strong{color:var(--text)}
       .status{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.55}
+      .compare{margin-top:18px}
+      .compare-card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px}
+      .compare-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+      .compare-title{font-weight:900}
+      .compare-sub{color:var(--muted);font-size:13px;margin-top:4px}
+      .compare-grid{margin-top:12px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px;align-items:center}
+      .cmp-h{color:var(--muted);font-size:11px;letter-spacing:0.5px;text-transform:uppercase;font-weight:900}
+      .cmp-cell{padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);font-size:13px}
+      .cmp-cell.feat{background:rgba(255,255,255,0.03)}
+      .cmp-y{color:rgba(39,174,96,1);font-weight:900}
+      .cmp-n{color:rgba(255,80,80,1);font-weight:900}
+      @media (max-width: 900px){
+        .compare-grid{grid-template-columns:1fr 1fr 1fr}
+        .compare-grid .hide-sm{display:none}
+      }
+
+      /* Toasts */
+      .toasts{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:grid;gap:10px;z-index:2000;width:min(520px, calc(100vw - 24px))}
+      .toast{border:1px solid rgba(255,255,255,0.14);background:rgba(15,15,15,0.84);backdrop-filter:blur(10px);color:var(--text);padding:12px 14px;border-radius:14px;box-shadow:0 18px 52px rgba(0,0,0,0.48)}
+      .toast .t-title{font-weight:900;font-size:13px}
+      .toast .t-body{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.45}
+      .toast{opacity:0;transform:translateY(10px);animation:toastIn 260ms ease forwards}
+      @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
+      @keyframes toastOut { to { opacity: 0; transform: translateY(10px); } }
+      .toast.out{animation:toastOut 220ms ease forwards}
       footer{margin-top:24px;color:var(--muted);font-size:13px;text-align:center}
       .links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px}
-      .links a{opacity:0.9}
+      .links a{opacity:0.9;text-decoration:none;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.03);transition:transform 180ms ease, border-color 180ms ease}
+      .links a:hover{transform:translateY(-1px);border-color:rgba(0,209,255,0.35)}
+
+      /* Pricing page animations (start here first) */
+      @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .top{animation:fadeUp 520ms ease both}
+      .card{transition:transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;will-change:transform}
+      .card:hover{transform:translateY(-2px);box-shadow:0 18px 52px rgba(0,0,0,0.45);border-color:rgba(0,209,255,0.18)}
+      .card{opacity:0;transform:translateY(12px);animation:fadeUp 560ms ease forwards}
+      .card:nth-child(1){animation-delay:60ms}
+      .card:nth-child(2){animation-delay:130ms}
+      .card:nth-child(3){animation-delay:200ms}
+      @media (prefers-reduced-motion: reduce){
+        .top,.card{animation:none !important;opacity:1 !important;transform:none !important}
+        .card,.buy button,.links a{transition:none !important}
+      }
     </style>
   </head>
   <body>
@@ -54,29 +105,35 @@
 
       <div class="grid" role="list" aria-label="Pricing plans">
         <div class="card" role="listitem">
-          <div class="name">Monthly</div>
+          <div class="name">Monthly <span class="tag blue">7-day free trial</span></div>
           <div class="price">$39.99<span class="small"> / month</span></div>
-          <div class="small">Cancel anytime.</div>
+          <div class="small">7-day free trial. Then $39.99/mo. Cancel anytime.</div>
           <ul>
             <li>Confidence Score™</li>
             <li>Position sizing dashboard</li>
             <li>Early access to new features</li>
           </ul>
-          <div class="buy">
-            <button id="buy-monthly" class="primary">Buy monthly</button>
+          <div class="card-footer">
+            <div class="buy">
+              <button id="buy-monthly" class="primary">Buy monthly</button>
+            </div>
+            <div class="reassure"><strong>Cancel anytime.</strong> No hidden fees.</div>
           </div>
         </div>
 
         <div class="card" role="listitem">
-          <div class="name">Yearly</div>
+          <div class="name">Yearly <span class="tag">Best value • Save 40%</span></div>
           <div class="price">$289.99<span class="small"> / year</span></div>
           <div class="small">Save vs monthly.</div>
           <ul>
             <li>Everything in Monthly</li>
             <li>Best value</li>
           </ul>
-          <div class="buy">
-            <button id="buy-yearly" class="primary">Buy yearly</button>
+          <div class="card-footer">
+            <div class="buy">
+              <button id="buy-yearly" class="primary">Buy yearly</button>
+            </div>
+            <div class="reassure"><strong>Best value.</strong> Same features, lower effective monthly cost.</div>
           </div>
         </div>
 
@@ -88,8 +145,49 @@
             <li>Everything in Yearly</li>
             <li>Lifetime access to NEON features</li>
           </ul>
-          <div class="buy">
-            <button id="buy-lifetime" class="primary">Buy lifetime</button>
+          <div class="card-footer">
+            <div class="buy">
+              <button id="buy-lifetime" class="primary">Buy lifetime</button>
+            </div>
+            <div class="reassure"><strong>One-time purchase.</strong> Keep access long-term.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare">
+        <div class="compare-card">
+          <div class="compare-head">
+            <div>
+              <div class="compare-title">Compare plans</div>
+              <div class="compare-sub">Everything is browser-based. No downloads.</div>
+            </div>
+            <a class="btn" href="/neon">Preview NEON</a>
+          </div>
+          <div class="compare-grid" role="table" aria-label="Plan comparison table">
+            <div class="cmp-h hide-sm" role="columnheader">Feature</div>
+            <div class="cmp-h" role="columnheader">Monthly</div>
+            <div class="cmp-h" role="columnheader">Yearly</div>
+            <div class="cmp-h" role="columnheader">Lifetime</div>
+
+            <div class="cmp-cell feat hide-sm" role="rowheader">Confidence Score™</div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+
+            <div class="cmp-cell feat hide-sm" role="rowheader">Position sizing (Kelly)</div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+
+            <div class="cmp-cell feat hide-sm" role="rowheader">Early access features</div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">✓</span></div>
+
+            <div class="cmp-cell feat hide-sm" role="rowheader">Free trial</div>
+            <div class="cmp-cell" role="cell"><span class="cmp-y">7 days</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-n">—</span></div>
+            <div class="cmp-cell" role="cell"><span class="cmp-n">—</span></div>
           </div>
         </div>
       </div>
@@ -107,6 +205,21 @@
     </div>
     <script>
       (function () {
+        // tiny toast helper (pricing page first)
+        const toastRoot = document.createElement('div')
+        toastRoot.className = 'toasts'
+        document.body.appendChild(toastRoot)
+        function toast(title, body, ms=2800){
+          const el = document.createElement('div')
+          el.className = 'toast'
+          el.innerHTML = `<div class="t-title"></div><div class="t-body"></div>`
+          el.querySelector('.t-title').textContent = title || 'Notice'
+          el.querySelector('.t-body').textContent = body || ''
+          toastRoot.appendChild(el)
+          const timer = setTimeout(()=>{ el.classList.add('out'); setTimeout(()=> el.remove(), 240) }, ms)
+          el.addEventListener('click', ()=>{ clearTimeout(timer); el.classList.add('out'); setTimeout(()=> el.remove(), 240) })
+        }
+
         const statusEl = document.getElementById('status')
         const setStatus = (m) => { if(statusEl) statusEl.textContent = m || '' }
 
@@ -126,13 +239,16 @@
         function open(priceId){
           if(!token){
             setStatus('Missing Paddle token. Update paddle_config.js.')
+            toast('Missing setup', 'Add your Paddle client-side token in paddle_config.js.')
             return
           }
           if(!priceId){
             setStatus('Missing Paddle price id. Update paddle_config.js.')
+            toast('Missing setup', 'Add your pri_ price IDs in paddle_config.js.')
             return
           }
           setStatus('')
+          toast('Opening checkout', 'If the overlay doesn’t appear, double-check sandbox/live token + domain settings.')
           Paddle.Checkout.open({
             items: [{ priceId, quantity: 1 }],
             settings: {
@@ -151,6 +267,7 @@
 
         if(!token || !prices.monthly || !prices.yearly || !prices.lifetime){
           setStatus('Set your Paddle token + pri_ IDs in paddle_config.js, then re-test.')
+          toast('Setup needed', 'Fill in paddle_config.js with token + 3 price IDs.')
         }
       })()
     </script>
